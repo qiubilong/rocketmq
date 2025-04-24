@@ -32,14 +32,14 @@ public class NettyDecoder extends LengthFieldBasedFrameDecoder {
         Integer.parseInt(System.getProperty("com.rocketmq.remoting.frameMaxLength", "16777216"));
 
     public NettyDecoder() {
-        super(FRAME_MAX_LENGTH, 0, 4, 0, 4);
+        super(FRAME_MAX_LENGTH, 0, 4, 0, 4);/* 基于报文长度字段 - 分包 */
     }
 
     @Override
     public Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
         ByteBuf frame = null;
         try {
-            frame = (ByteBuf) super.decode(ctx, in);
+            frame = (ByteBuf) super.decode(ctx, in);/* 分包后，不包含总长度 */
             if (null == frame) {
                 return null;
             }

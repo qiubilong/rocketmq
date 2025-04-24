@@ -38,7 +38,7 @@ import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-public class RemotingCommand {
+public class RemotingCommand { /* 通讯请求报文 */
     public static final String SERIALIZE_TYPE_PROPERTY = "rocketmq.serialize.type";
     public static final String SERIALIZE_TYPE_ENV = "ROCKETMQ_SERIALIZE_TYPE";
     public static final String REMOTING_VERSION_KEY = "rocketmq.remoting.version";
@@ -76,7 +76,7 @@ public class RemotingCommand {
         }
     }
 
-    private int code;
+    private int code;              /* 请求命令 */
     private LanguageCode language = LanguageCode.JAVA;
     private int version = 0;
     private int opaque = requestId.getAndIncrement();
@@ -87,7 +87,7 @@ public class RemotingCommand {
 
     private SerializeType serializeTypeCurrentRPC = serializeTypeConfigInThisServer;
 
-    private transient byte[] body;
+    private transient byte[] body; /* 请求内容 */
 
     protected RemotingCommand() {
     }
@@ -164,9 +164,9 @@ public class RemotingCommand {
             throw new RemotingCommandException("decode error, bad header length: " + headerLength);
         }
 
-        RemotingCommand cmd = headerDecode(byteBuffer, headerLength, getProtocolType(oriHeaderLen));
+        RemotingCommand cmd = headerDecode(byteBuffer, headerLength, getProtocolType(oriHeaderLen)); //报文 - 头部
 
-        int bodyLength = length - 4 - headerLength;
+        int bodyLength = length - 4 - headerLength;              //报文 - 内容
         byte[] bodyData = null;
         if (bodyLength > 0) {
             bodyData = new byte[bodyLength];
@@ -443,7 +443,7 @@ public class RemotingCommand {
             headerSize = header.length;
             out.writeBytes(header);
         }
-        out.setInt(beginIndex, 4 + headerSize + bodySize);
+        out.setInt(beginIndex, 4 + headerSize + bodySize);/* 报文总大小 = 报文大小 + 头部大小 + 内容大小  */
         out.setInt(beginIndex + 4, markProtocolType(headerSize, serializeTypeCurrentRPC));
     }
 

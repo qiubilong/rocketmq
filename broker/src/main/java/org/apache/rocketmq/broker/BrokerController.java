@@ -269,7 +269,7 @@ public class BrokerController {
 
         result = result && this.messageStore.load();
 
-        if (result) {
+        if (result) {             /* 创建Broker Netty 服务器 10911 */
             this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.clientHousekeepingService);
             NettyServerConfig fastConfig = (NettyServerConfig) this.nettyServerConfig.clone();
             fastConfig.setListenPort(nettyServerConfig.getListenPort() - 2);
@@ -542,8 +542,8 @@ public class BrokerController {
     }
 
     public void registerProcessor() {
-        /**
-         * SendMessageProcessor
+        /*
+         * 生产者 - 生产消息处理器 - SendMessageProcessor
          */
         SendMessageProcessor sendProcessor = new SendMessageProcessor(this);
         sendProcessor.registerSendMessageHook(sendMessageHookList);
@@ -557,13 +557,13 @@ public class BrokerController {
         this.fastRemotingServer.registerProcessor(RequestCode.SEND_MESSAGE_V2, sendProcessor, this.sendMessageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.SEND_BATCH_MESSAGE, sendProcessor, this.sendMessageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.CONSUMER_SEND_MSG_BACK, sendProcessor, this.sendMessageExecutor);
-        /**
-         * PullMessageProcessor
+        /*
+         * 消息者 -消费消息处理器 -  PullMessageProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.PULL_MESSAGE, this.pullMessageProcessor, this.pullMessageExecutor);
         this.pullMessageProcessor.registerConsumeMessageHook(consumeMessageHookList);
 
-        /**
+        /*
          * ReplyMessageProcessor
          */
         ReplyMessageProcessor replyMessageProcessor = new ReplyMessageProcessor(this);
@@ -596,8 +596,8 @@ public class BrokerController {
         this.fastRemotingServer.registerProcessor(RequestCode.UNREGISTER_CLIENT, clientProcessor, this.clientManageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.CHECK_CLIENT_CONFIG, clientProcessor, this.clientManageExecutor);
 
-        /**
-         * ConsumerManageProcessor
+        /*
+         * 消费者 -消费偏移 -  ConsumerManageProcessor
          */
         ConsumerManageProcessor consumerManageProcessor = new ConsumerManageProcessor(this);
         this.remotingServer.registerProcessor(RequestCode.GET_CONSUMER_LIST_BY_GROUP, consumerManageProcessor, this.consumerManageExecutor);

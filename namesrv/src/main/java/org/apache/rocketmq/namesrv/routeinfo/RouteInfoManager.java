@@ -50,15 +50,15 @@ import org.apache.rocketmq.common.protocol.route.TopicRouteData;
 import org.apache.rocketmq.common.sysflag.TopicSysFlag;
 import org.apache.rocketmq.remoting.common.RemotingUtil;
 
-public class RouteInfoManager {
+public class RouteInfoManager {/* Topic路由注册中心 */
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
-    private final static long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
+    private final static long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;//2分钟
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final HashMap<String/* topic */, Map<String /* brokerName */ , QueueData>> topicQueueTable;
-    private final HashMap<String/* brokerName */, BrokerData> brokerAddrTable;
-    private final HashMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
-    private final HashMap<String/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
-    private final HashMap<String/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
+    private final HashMap<String/* topic */, Map<String /* brokerName */ , QueueData>> topicQueueTable; /* topic信息 */
+    private final HashMap<String/** brokerName */, BrokerData> brokerAddrTable;
+    private final HashMap<String/** clusterName */, Set<String/** brokerName */>> clusterAddrTable;
+    private final HashMap<String/** brokerAddr */, BrokerLiveInfo> brokerLiveTable;
+    private final HashMap<String/** brokerAddr */, List<String>/** Filter Server */> filterServerTable;
 
     public RouteInfoManager() {
         this.topicQueueTable = new HashMap<>(1024);
@@ -157,7 +157,7 @@ public class RouteInfoManager {
                 BrokerData brokerData = this.brokerAddrTable.get(brokerName);
                 if (null == brokerData) {
                     registerFirst = true;
-                    brokerData = new BrokerData(clusterName, brokerName, new HashMap<>());
+                    brokerData = new BrokerData(clusterName, brokerName, new HashMap<>()); /* Broker信息 */
                     this.brokerAddrTable.put(brokerName, brokerData);
                 }
                 Map<Long, String> brokerAddrsMap = brokerData.getBrokerAddrs();
@@ -188,7 +188,7 @@ public class RouteInfoManager {
                                 topicConfigWrapper.getTopicConfigTable();
                         if (tcTable != null) {
                             for (Map.Entry<String, TopicConfig> entry : tcTable.entrySet()) {
-                                this.createAndUpdateQueueData(brokerName, entry.getValue());
+                                this.createAndUpdateQueueData(brokerName, entry.getValue()); /* 更新Topic信息 */
                             }
                         }
                     }
@@ -747,7 +747,7 @@ public class RouteInfoManager {
 class BrokerLiveInfo {
     private long lastUpdateTimestamp;
     private DataVersion dataVersion;
-    private Channel channel;
+    private Channel channel; /* Broker连接通道Channel */
     private String haServerAddr;
 
     public BrokerLiveInfo(long lastUpdateTimestamp, DataVersion dataVersion, Channel channel,

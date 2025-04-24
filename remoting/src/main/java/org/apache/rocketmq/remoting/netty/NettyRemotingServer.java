@@ -67,15 +67,15 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 public class NettyRemotingServer extends NettyRemotingAbstract implements RemotingServer {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
     private final ServerBootstrap serverBootstrap;
-    private final EventLoopGroup eventLoopGroupSelector;
-    private final EventLoopGroup eventLoopGroupBoss;
+    private final EventLoopGroup eventLoopGroupSelector;       /* 处理Channel读写 - 线程组（1） */
+    private final EventLoopGroup eventLoopGroupBoss;           /* 处理Accept连接 - 线程组 */
     private final NettyServerConfig nettyServerConfig;
 
     private final ExecutorService publicExecutor;
-    private final ChannelEventListener channelEventListener;
+    private final ChannelEventListener channelEventListener;  /* 客户端Channel失活回调 - BrokerHousekeepingService */
 
     private final Timer timer = new Timer("ServerHouseKeepingService", true);
-    private DefaultEventExecutorGroup defaultEventExecutorGroup;
+    private DefaultEventExecutorGroup defaultEventExecutorGroup;//业务线程池
 
 
     private int port = 0;
@@ -86,9 +86,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
     // sharable handlers
     private HandshakeHandler handshakeHandler;
-    private NettyEncoder encoder;
+    private NettyEncoder encoder;//NettyEncoder
     private NettyConnectManageHandler connectionManageHandler;
-    private NettyServerHandler serverHandler;
+    private NettyServerHandler serverHandler; // NettyServerHandler
 
     public NettyRemotingServer(final NettyServerConfig nettyServerConfig) {
         this(nettyServerConfig, null);
@@ -97,7 +97,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     public NettyRemotingServer(final NettyServerConfig nettyServerConfig,
         final ChannelEventListener channelEventListener) {
         super(nettyServerConfig.getServerOnewaySemaphoreValue(), nettyServerConfig.getServerAsyncSemaphoreValue());
-        this.serverBootstrap = new ServerBootstrap();
+        this.serverBootstrap = new ServerBootstrap();/* 创建netty服务端，初始化 boss线程组 和 worker线程组 */
         this.nettyServerConfig = nettyServerConfig;
         this.channelEventListener = channelEventListener;
 
@@ -181,7 +181,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     }
 
     @Override
-    public void start() {
+    public void start() {  /* 启动Netty服务端，监听客户端连接 */
         this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(
             nettyServerConfig.getServerWorkerThreads(),
             new ThreadFactory() {
@@ -203,8 +203,8 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                 .option(ChannelOption.SO_REUSEADDR, true)
                 .option(ChannelOption.SO_KEEPALIVE, false)
                 .childOption(ChannelOption.TCP_NODELAY, true)
-                .localAddress(new InetSocketAddress(this.nettyServerConfig.getListenPort()))
-                .childHandler(new ChannelInitializer<SocketChannel>() {
+                .localAddress(new InetSocketAddress(this.nettyServerConfig.getListenPort()))//9876
+                .childHandler(new ChannelInitializer<SocketChannel>() { /* 客户端Channel - 初始化回调 */
                     @Override
                     public void initChannel(SocketChannel ch) throws Exception {
                         ch.pipeline()
@@ -238,7 +238,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
 
         try {
-            ChannelFuture sync = this.serverBootstrap.bind().sync();
+            ChannelFuture sync = this.serverBootstrap.bind().sync();/* 实例化NioServerSocketChannel & 监听客户端连接 */
             InetSocketAddress addr = (InetSocketAddress) sync.channel().localAddress();
             this.port = addr.getPort();
         } catch (InterruptedException e1) {

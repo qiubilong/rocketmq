@@ -51,11 +51,11 @@ public class NamesrvStartup {
         main0(args);
     }
 
-    public static NamesrvController main0(String[] args) {
+    public static NamesrvController main0(String[] args) { /* 启动 - Topic路由注册中心 - 存储broker和topic信息 - 独立部署 */
 
         try {
             NamesrvController controller = createNamesrvController(args);
-            start(controller);
+            start(controller);/* 创建 & 启动 NamesrvController */
             String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
             log.info(tip);
             System.out.printf("%s%n", tip);
@@ -81,14 +81,14 @@ public class NamesrvStartup {
 
         final NamesrvConfig namesrvConfig = new NamesrvConfig();
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
-        nettyServerConfig.setListenPort(9876);
+        nettyServerConfig.setListenPort(9876);/* Topic路由注册中心 - 对外服务端口  */
         if (commandLine.hasOption('c')) {
             String file = commandLine.getOptionValue('c');
             if (file != null) {
                 InputStream in = new BufferedInputStream(new FileInputStream(file));
                 properties = new Properties();
                 properties.load(in);
-                MixAll.properties2Object(properties, namesrvConfig);
+                MixAll.properties2Object(properties, namesrvConfig); /* 解析 -c 文件配置 */
                 MixAll.properties2Object(properties, nettyServerConfig);
 
                 namesrvConfig.setConfigStorePath(file);
@@ -123,7 +123,7 @@ public class NamesrvStartup {
         MixAll.printObjectProperties(log, namesrvConfig);
         MixAll.printObjectProperties(log, nettyServerConfig);
 
-        final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
+        final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig); /* 创建 - Topic路由注册中心  */
 
         // remember all configs to prevent discard
         controller.getConfiguration().registerConfig(properties);
@@ -137,7 +137,7 @@ public class NamesrvStartup {
             throw new IllegalArgumentException("NamesrvController is null");
         }
 
-        boolean initResult = controller.initialize();
+        boolean initResult = controller.initialize();/*  创建netty服务端、注册请求处理器、定时移除掉线broker */
         if (!initResult) {
             controller.shutdown();
             System.exit(-3);
@@ -148,7 +148,7 @@ public class NamesrvStartup {
             return null;
         }));
 
-        controller.start();
+        controller.start();/* 启动netty服务端，监听broker请求 --> 接收管理topic配置信息   */
 
         return controller;
     }

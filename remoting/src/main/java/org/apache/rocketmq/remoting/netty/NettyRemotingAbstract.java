@@ -90,7 +90,7 @@ public abstract class NettyRemotingAbstract {
     /**
      * The default request processor to use in case there is no exact match in {@link #processorTable} per request code.
      */
-    protected Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessor;
+    protected Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessor; //DefaultRequestProcessor
 
     /**
      * SSL context via which to create {@link SslHandler}.
@@ -224,7 +224,7 @@ public abstract class NettyRemotingAbstract {
                         };
                         if (pair.getObject1() instanceof AsyncNettyRequestProcessor) {
                             AsyncNettyRequestProcessor processor = (AsyncNettyRequestProcessor)pair.getObject1();
-                            processor.asyncProcessRequest(ctx, cmd, callback);
+                            processor.asyncProcessRequest(ctx, cmd, callback); /* DefaultRequestProcessor  */
                         } else {
                             NettyRequestProcessor processor = pair.getObject1();
                             RemotingCommand response = processor.processRequest(ctx, cmd);

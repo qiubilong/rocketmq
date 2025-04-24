@@ -54,7 +54,7 @@ public class BrokerStartup {
     public static InternalLogger log;
 
     public static void main(String[] args) {
-        start(createBrokerController(args));
+        start(createBrokerController(args)); /* 创建 & 启动Broker */
     }
 
     public static BrokerController start(BrokerController controller) {
@@ -138,7 +138,7 @@ public class BrokerStartup {
                 System.exit(-2);
             }
 
-            String namesrvAddr = brokerConfig.getNamesrvAddr();
+            String namesrvAddr = brokerConfig.getNamesrvAddr(); /* Topic路由注册中心 地址*/
             if (null != namesrvAddr) {
                 try {
                     String[] addrArray = namesrvAddr.split(";");
@@ -173,7 +173,7 @@ public class BrokerStartup {
                 brokerConfig.setBrokerId(-1);
             }
 
-            messageStoreConfig.setHaListenPort(nettyServerConfig.getListenPort() + 1);
+            messageStoreConfig.setHaListenPort(nettyServerConfig.getListenPort() + 1);//高优先级服务器
             LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
             JoranConfigurator configurator = new JoranConfigurator();
             configurator.setContext(lc);
@@ -209,7 +209,7 @@ public class BrokerStartup {
             MixAll.printObjectProperties(log, nettyClientConfig);
             MixAll.printObjectProperties(log, messageStoreConfig);
 
-            final BrokerController controller = new BrokerController(
+            final BrokerController controller = new BrokerController( /* 1、创建Broker */
                 brokerConfig,
                 nettyServerConfig,
                 nettyClientConfig,
@@ -217,7 +217,7 @@ public class BrokerStartup {
             // remember all configs to prevent discard
             controller.getConfiguration().registerConfig(properties);
 
-            boolean initResult = controller.initialize();
+            boolean initResult = controller.initialize();            /* 2、初始化Broker */
             if (!initResult) {
                 controller.shutdown();
                 System.exit(-3);

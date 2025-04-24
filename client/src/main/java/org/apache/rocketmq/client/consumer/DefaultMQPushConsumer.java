@@ -137,7 +137,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Queue allocation algorithm specifying how message queues are allocated to each consumer clients.
      */
-    private AllocateMessageQueueStrategy allocateMessageQueueStrategy;
+    private AllocateMessageQueueStrategy allocateMessageQueueStrategy; //AllocateMessageQueueAveragely
 
     /**
      * Subscription relationship

@@ -97,7 +97,7 @@ public class DefaultRequestProcessor extends AsyncNettyRequestProcessor implemen
             case RequestCode.REGISTER_BROKER:
                 Version brokerVersion = MQVersion.value2Version(request.getVersion());
                 if (brokerVersion.ordinal() >= MQVersion.Version.V3_0_11.ordinal()) {
-                    return this.registerBrokerWithFilterServer(ctx, request);
+                    return this.registerBrokerWithFilterServer(ctx, request); /* 注册Broker信息 */
                 } else {
                     return this.registerBroker(ctx, request);
                 }
@@ -229,14 +229,14 @@ public class DefaultRequestProcessor extends AsyncNettyRequestProcessor implemen
             registerBrokerBody.getTopicConfigSerializeWrapper().getDataVersion().setCounter(new AtomicLong(0));
             registerBrokerBody.getTopicConfigSerializeWrapper().getDataVersion().setTimestamp(0);
         }
-
+        /* 注册Broker 和 Topic信息 */
         RegisterBrokerResult result = this.namesrvController.getRouteInfoManager().registerBroker(
             requestHeader.getClusterName(),
             requestHeader.getBrokerAddr(),
             requestHeader.getBrokerName(),
             requestHeader.getBrokerId(),
             requestHeader.getHaServerAddr(),
-            registerBrokerBody.getTopicConfigSerializeWrapper(),
+            registerBrokerBody.getTopicConfigSerializeWrapper(),/* Topic信息 */
             registerBrokerBody.getFilterServerList(),
             ctx.channel());
 

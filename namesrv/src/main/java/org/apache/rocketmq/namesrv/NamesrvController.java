@@ -39,7 +39,7 @@ import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.srvutil.FileWatchService;
 
 
-public class NamesrvController {
+public class NamesrvController { /* Topic路由注册中心 - 存储broker和topic信息 - 独立部署 */
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
     private final NamesrvConfig namesrvConfig;
@@ -64,7 +64,7 @@ public class NamesrvController {
         this.namesrvConfig = namesrvConfig;
         this.nettyServerConfig = nettyServerConfig;
         this.kvConfigManager = new KVConfigManager(this);
-        this.routeInfoManager = new RouteInfoManager();
+        this.routeInfoManager = new RouteInfoManager(); /* Topic路由注册中心 */
         this.brokerHousekeepingService = new BrokerHousekeepingService(this);
         this.configuration = new Configuration(
             log,
@@ -75,15 +75,15 @@ public class NamesrvController {
 
     public boolean initialize() {
 
-        this.kvConfigManager.load();
-
+        this.kvConfigManager.load();//加载旧数据
+        /* 创建netty服务端，初始化 boss线程组 和 worker线程组 */
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
 
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
 
-        this.registerProcessor();
-
+        this.registerProcessor(); /* 注册请求处理器 */
+                                                                                                 /* 定时移除掉线的Broker节点  */
         this.scheduledExecutorService.scheduleAtFixedRate(NamesrvController.this.routeInfoManager::scanNotActiveBroker, 5, 10, TimeUnit.SECONDS);
 
         this.scheduledExecutorService.scheduleAtFixedRate(NamesrvController.this.kvConfigManager::printAllPeriodically, 1, 10, TimeUnit.MINUTES);
@@ -136,12 +136,12 @@ public class NamesrvController {
                 this.remotingExecutor);
         } else {
 
-            this.remotingServer.registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor);
+            this.remotingServer.registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor); /* 注册请求处理器 */
         }
     }
 
     public void start() throws Exception {
-        this.remotingServer.start();
+        this.remotingServer.start();/* 启动netty服务端，监听broker请求 --> 接收管理topic配置信息   */
 
         if (this.fileWatchService != null) {
             this.fileWatchService.start();

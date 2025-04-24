@@ -600,7 +600,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
                 this.rebalanceImpl.setConsumerGroup(this.defaultMQPushConsumer.getConsumerGroup());
                 this.rebalanceImpl.setMessageModel(this.defaultMQPushConsumer.getMessageModel());
-                this.rebalanceImpl.setAllocateMessageQueueStrategy(this.defaultMQPushConsumer.getAllocateMessageQueueStrategy());
+                this.rebalanceImpl.setAllocateMessageQueueStrategy(this.defaultMQPushConsumer.getAllocateMessageQueueStrategy());/* 分区与消费者 AllocateMessageQueueAveragely */
                 this.rebalanceImpl.setmQClientFactory(this.mQClientFactory);
 
                 this.pullAPIWrapper = new PullAPIWrapper(

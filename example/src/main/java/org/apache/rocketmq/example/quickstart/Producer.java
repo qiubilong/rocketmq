@@ -18,6 +18,7 @@ package org.apache.rocketmq.example.quickstart;
 
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -38,77 +39,37 @@ public class Producer {
 
     public static void main(String[] args) throws MQClientException, InterruptedException {
 
-        /*
-         * Instantiate with a producer group name.
-         */
+
         DefaultMQProducer producer = new DefaultMQProducer(PRODUCER_GROUP);
+        producer.setNamesrvAddr(DEFAULT_NAMESRVADDR);
 
-        /*
-         * Specify name server addresses.
-         *
-         * Alternatively, you may specify name server addresses via exporting environmental variable: NAMESRV_ADDR
-         * <pre>
-         * {@code
-         *  producer.setNamesrvAddr("name-server1-ip:9876;name-server2-ip:9876");
-         * }
-         * </pre>
-         */
-        // Uncomment the following line while debugging, namesrvAddr should be set to your local address
-//        producer.setNamesrvAddr(DEFAULT_NAMESRVADDR);
-
-        /*
-         * Launch the instance.
-         */
         producer.start();
 
         for (int i = 0; i < MESSAGE_COUNT; i++) {
             try {
 
-                /*
-                 * Create a message instance, specifying topic, tag and message body.
-                 */
-                Message msg = new Message(TOPIC /* Topic */,
-                    TAG /* Tag */,
-                    ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET) /* Message body */
-                );
+                Message msg = new Message(TOPIC , TAG , ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET));
 
-                /*
-                 * Call send message to deliver message to one of brokers.
+                //producer.sendOneway(msg);  //日志场景 don't care about the send result,you can use this way
+                /**
+                 * 同步调佣，deliver message to one of brokers
                  */
                 SendResult sendResult = producer.send(msg);
-                /*
-                 * There are different ways to send message, if you don't care about the send result,you can use this way
-                 * {@code
-                 * producer.sendOneway(msg);
-                 * }
-                 */
+                System.out.printf("%s%n", sendResult);
 
-                /*
-                 * if you want to get the send result in a synchronize way, you can use this send method
-                 * {@code
-                 * SendResult sendResult = producer.send(msg);
-                 * System.out.printf("%s%n", sendResult);
-                 * }
-                 */
 
-                /*
-                 * if you want to get the send result in a asynchronize way, you can use this send method
-                 * {@code
-                 *
-                 *  producer.send(msg, new SendCallback() {
-                 *  @Override
-                 *  public void onSuccess(SendResult sendResult) {
-                 *      // do something
-                 *  }
-                 *
-                 *  @Override
-                 *  public void onException(Throwable e) {
-                 *      // do something
-                 *  }
-                 *});
-                 *
-                 *}
-                 */
+                //异步调用，不能重试
+//              /*  producer.send(msg, new SendCallback() {
+//                       @Override
+//                       public void onSuccess(SendResult sendResult) {
+//                           // do something
+//                       }
+//                       @Override
+//                       public void onException(Throwable e) {
+//                           // do something
+//                       }
+//                 });*/
+
 
                 System.out.printf("%s%n", sendResult);
             } catch (Exception e) {
@@ -116,10 +77,7 @@ public class Producer {
                 Thread.sleep(1000);
             }
         }
-
-        /*
-         * Shut down once the producer instance is not longer in use.
-         */
+ 
         producer.shutdown();
     }
 }
