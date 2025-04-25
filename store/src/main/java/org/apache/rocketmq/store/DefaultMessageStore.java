@@ -71,12 +71,12 @@ import org.apache.rocketmq.store.index.QueryOffsetResult;
 import org.apache.rocketmq.store.schedule.ScheduleMessageService;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 
-public class DefaultMessageStore implements MessageStore {
+public class DefaultMessageStore implements MessageStore { /* 消息存储 */
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final MessageStoreConfig messageStoreConfig;
     // CommitLog
-    private final CommitLog commitLog;
+    private final CommitLog commitLog; /* 消息存储文件 */
 
     private final ConcurrentMap<String/* topic */, ConcurrentMap<Integer/* queueId */, ConsumeQueue>> consumeQueueTable;
 
@@ -90,7 +90,7 @@ public class DefaultMessageStore implements MessageStore {
 
     private final AllocateMappedFileService allocateMappedFileService;
 
-    private final ReputMessageService reputMessageService;
+    private final ReputMessageService reputMessageService; /* 建立消息 消费offset和time索引 - 工作线程 */
 
     private final HAService haService;
 
@@ -138,12 +138,12 @@ public class DefaultMessageStore implements MessageStore {
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
             this.commitLog = new DLedgerCommitLog(this);
         } else {
-            this.commitLog = new CommitLog(this);
+            this.commitLog = new CommitLog(this); /* 消息存储文件 - 所有topic的消息都写入这个文件 */
         }
         this.consumeQueueTable = new ConcurrentHashMap<>(32);
 
-        this.flushConsumeQueueService = new FlushConsumeQueueService();
-        this.cleanCommitLogService = new CleanCommitLogService();
+        this.flushConsumeQueueService = new FlushConsumeQueueService();/* 消费offset索引刷盘 - 工作线程 */
+        this.cleanCommitLogService = new CleanCommitLogService();//删除过期文件
         this.cleanConsumeQueueService = new CleanConsumeQueueService();
         this.storeStatsService = new StoreStatsService();
         this.indexService = new IndexService(this);
@@ -152,7 +152,7 @@ public class DefaultMessageStore implements MessageStore {
         } else {
             this.haService = null;
         }
-        this.reputMessageService = new ReputMessageService();
+        this.reputMessageService = new ReputMessageService(); /* 建立消息 消费offset和time索引 - 工作线程 */
 
         this.scheduleMessageService = new ScheduleMessageService(this);
 
@@ -167,8 +167,8 @@ public class DefaultMessageStore implements MessageStore {
         this.indexService.start();
 
         this.dispatcherList = new LinkedList<>();
-        this.dispatcherList.addLast(new CommitLogDispatcherBuildConsumeQueue());
-        this.dispatcherList.addLast(new CommitLogDispatcherBuildIndex());
+        this.dispatcherList.addLast(new CommitLogDispatcherBuildConsumeQueue());/* 消息消费offset索引 */
+        this.dispatcherList.addLast(new CommitLogDispatcherBuildIndex());/* 时间索引 */
 
         File file = new File(StorePathConfigHelper.getLockFile(messageStoreConfig.getStorePathRootDir()));
         MappedFile.ensureDirOK(file.getParent());
@@ -462,7 +462,7 @@ public class DefaultMessageStore implements MessageStore {
         }
 
 
-        long beginTime = this.getSystemClock().now();
+        long beginTime = this.getSystemClock().now();                       /* CommitLog中 存储消息 */
         CompletableFuture<PutMessageResult> putResultFuture = this.commitLog.asyncPutMessage(msg);
 
         putResultFuture.thenAccept(result -> {
@@ -511,7 +511,7 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public PutMessageResult putMessage(MessageExtBrokerInner msg) {
-        return waitForPutResult(asyncPutMessage(msg));
+        return waitForPutResult(asyncPutMessage(msg));/* 存储消息 */
     }
 
     @Override

@@ -56,7 +56,7 @@ public class MQFaultStrategy {
     }
 
     public MessageQueue selectOneMessageQueue(final TopicPublishInfo tpInfo, final String lastBrokerName) {
-        if (this.sendLatencyFaultEnable) {
+        if (this.sendLatencyFaultEnable) {//false跳过
             try {
                 int index = tpInfo.getSendWhichQueue().incrementAndGet();
                 for (int i = 0; i < tpInfo.getMessageQueueList().size(); i++) {
@@ -87,7 +87,7 @@ public class MQFaultStrategy {
             return tpInfo.selectOneMessageQueue();
         }
 
-        return tpInfo.selectOneMessageQueue(lastBrokerName);
+        return tpInfo.selectOneMessageQueue(lastBrokerName);/* 轮询选择topic分区，如果上次的Broker发送失败，尽量跳过 */
     }
 
     public void updateFaultItem(final String brokerName, final long currentLatency, boolean isolation) {

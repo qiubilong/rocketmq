@@ -208,7 +208,7 @@ public class ClientConfig {
      *
      * @param namesrvAddr name server address
      */
-    public void setNamesrvAddr(String namesrvAddr) {
+    public void setNamesrvAddr(String namesrvAddr) { /* 指定broker注册中心 */
         this.namesrvAddr = namesrvAddr;
         this.namespaceInitialized = false;
     }

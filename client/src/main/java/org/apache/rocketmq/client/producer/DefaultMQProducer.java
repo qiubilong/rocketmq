@@ -82,7 +82,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      *
      * See <a href="http://rocketmq.apache.org/docs/core-concept/">core concepts</a> for more discussion.
      */
-    private String producerGroup;
+    private String producerGroup; /* Broker通过Producer Group追踪事务的半消息（Half Message）,同一Producer Group下的生产者共享事务状态 */
 
     /**
      * Just for testing or demo program
@@ -155,7 +155,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      * @param producerGroup Producer group, see the name-sake field.
      */
     public DefaultMQProducer(final String producerGroup) {
-        this(null, producerGroup, null);
+        this(null, producerGroup, null);/* 创建生产者 */
     }
 
     /**
@@ -201,8 +201,8 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      */
     public DefaultMQProducer(final String namespace, final String producerGroup, RPCHook rpcHook) {
         this.namespace = namespace;
-        this.producerGroup = producerGroup;
-        defaultMQProducerImpl = new DefaultMQProducerImpl(this, rpcHook);
+        this.producerGroup = producerGroup; /* 生成组，用于 事务状态维护、故障转移	*/
+        defaultMQProducerImpl = new DefaultMQProducerImpl(this, rpcHook);/* 创建生产者 */
     }
 
     /**
@@ -278,7 +278,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     @Override
     public void start() throws MQClientException {
         this.setProducerGroup(withNamespace(this.producerGroup));
-        this.defaultMQProducerImpl.start();
+        this.defaultMQProducerImpl.start();/* 启动生产者 */
         if (null != traceDispatcher) {
             try {
                 traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());
@@ -330,7 +330,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     public SendResult send(
         Message msg) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         msg.setTopic(withNamespace(msg.getTopic()));
-        return this.defaultMQProducerImpl.send(msg);
+        return this.defaultMQProducerImpl.send(msg);/* 发送消息 */
     }
 
     /**

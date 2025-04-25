@@ -74,7 +74,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
                                           RemotingCommand request) throws RemotingCommandException {
         RemotingCommand response = null;
         try {
-            response = asyncProcessRequest(ctx, request).get();
+            response = asyncProcessRequest(ctx, request).get(); /*  存储消息 到 CommitLog */
         } catch (InterruptedException | ExecutionException e) {
             log.error("process SendMessage error, request : " + request.toString(), e);
         }
@@ -102,7 +102,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
                 if (requestHeader.isBatch()) {
                     return this.asyncSendBatchMessage(ctx, request, mqtraceContext, requestHeader);
                 } else {
-                    return this.asyncSendMessage(ctx, request, mqtraceContext, requestHeader);
+                    return this.asyncSendMessage(ctx, request, mqtraceContext, requestHeader); /*  存储消息 到 CommitLog */
                 }
         }
     }
@@ -262,7 +262,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
         });
     }
 
-
+    /*  存储消息 到 CommitLog */
     private CompletableFuture<RemotingCommand> asyncSendMessage(ChannelHandlerContext ctx, RemotingCommand request,
                                                                 SendMessageContext mqtraceContext,
                                                                 SendMessageRequestHeader requestHeader) {
@@ -323,7 +323,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
             }
             putMessageResult = this.brokerController.getTransactionalMessageService().asyncPrepareMessage(msgInner);
         } else {
-            putMessageResult = this.brokerController.getMessageStore().asyncPutMessage(msgInner);
+            putMessageResult = this.brokerController.getMessageStore().asyncPutMessage(msgInner);/* 存储消息 - DefaultMessageStore - CommitLog中存储消息   */
         }
         return handlePutMessageResultFuture(putMessageResult, response, request, msgInner, responseHeader, mqtraceContext, ctx, queueIdInt);
     }

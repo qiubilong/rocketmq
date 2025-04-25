@@ -55,7 +55,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
     private final DefaultMQPushConsumer defaultMQPushConsumer;
     private final MessageListenerConcurrently messageListener;
     private final BlockingQueue<Runnable> consumeRequestQueue;
-    private final ThreadPoolExecutor consumeExecutor;
+    private final ThreadPoolExecutor consumeExecutor; /* 消费者 - 请求消息 - 线程池 */
     private final String consumerGroup;
 
     private final ScheduledExecutorService scheduledExecutorService;
