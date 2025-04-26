@@ -21,7 +21,7 @@ public class RequestCode {
 
     public static final int SEND_MESSAGE = 10;
 
-    public static final int PULL_MESSAGE = 11;
+    public static final int PULL_MESSAGE = 11; /* 拉取消息 */
 
     public static final int QUERY_MESSAGE = 12;
     public static final int QUERY_BROKER_OFFSET = 13;

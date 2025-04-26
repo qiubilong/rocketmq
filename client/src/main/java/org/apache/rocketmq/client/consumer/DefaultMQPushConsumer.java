@@ -77,7 +77,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      *
      * See <a href="http://rocketmq.apache.org/docs/core-concept/">here</a> for further discussion.
      */
-    private String consumerGroup;
+    private String consumerGroup;  /* 消费组 */
 
     /**
      * Message model defines the way how messages are delivered to each consumer clients.
@@ -123,7 +123,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * messages born prior to {@link #consumeTimestamp} will be ignored
      * </li>
      * </ul>
-     */
+     */                                        /* 默认从上次偏移开始消费 */
     private ConsumeFromWhere consumeFromWhere = ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET;
 
     /**
@@ -137,7 +137,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Queue allocation algorithm specifying how message queues are allocated to each consumer clients.
      */
-    private AllocateMessageQueueStrategy allocateMessageQueueStrategy; //AllocateMessageQueueAveragely
+    private AllocateMessageQueueStrategy allocateMessageQueueStrategy; //messageQueue分区策略 = AllocateMessageQueueAveragely
 
     /**
      * Subscription relationship
@@ -704,7 +704,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     @Override
     public void start() throws MQClientException {
         setConsumerGroup(NamespaceUtil.wrapNamespace(this.getNamespace(), this.consumerGroup));
-        this.defaultMQPushConsumerImpl.start();
+        this.defaultMQPushConsumerImpl.start(); /* 启动消费者 */
         if (null != traceDispatcher) {
             try {
                 traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());

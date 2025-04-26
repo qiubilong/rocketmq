@@ -35,7 +35,7 @@ import org.apache.rocketmq.remoting.protocol.RequestType;
  */
 public class ClientConfig {
     public static final String SEND_MESSAGE_WITH_VIP_CHANNEL_PROPERTY = "com.rocketmq.sendMessageWithVIPChannel";
-    private String namesrvAddr = NameServerAddressUtils.getNameServerAddresses();
+    private String namesrvAddr = NameServerAddressUtils.getNameServerAddresses();/* 注册中心地址 */
     private String clientIP = RemotingUtil.getLocalAddress();
     private String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");
     private int clientCallbackExecutorThreads = Runtime.getRuntime().availableProcessors();

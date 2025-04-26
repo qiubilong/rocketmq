@@ -29,7 +29,7 @@ import org.apache.rocketmq.common.utils.ThreadUtils;
 
 public class PullMessageService extends ServiceThread {
     private final InternalLogger log = ClientLogger.getLog();
-    private final LinkedBlockingQueue<PullRequest> pullRequestQueue = new LinkedBlockingQueue<PullRequest>();
+    private final LinkedBlockingQueue<PullRequest> pullRequestQueue = new LinkedBlockingQueue<PullRequest>(); /* 消费消息请求队列 */
     private final MQClientInstance mQClientFactory;
     private final ScheduledExecutorService scheduledExecutorService = Executors
         .newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -80,7 +80,7 @@ public class PullMessageService extends ServiceThread {
         final MQConsumerInner consumer = this.mQClientFactory.selectConsumer(pullRequest.getConsumerGroup());
         if (consumer != null) {
             DefaultMQPushConsumerImpl impl = (DefaultMQPushConsumerImpl) consumer;
-            impl.pullMessage(pullRequest);
+            impl.pullMessage(pullRequest);/* 拉取消息 */
         } else {
             log.warn("No matched consumer for the PullRequest {}, drop it", pullRequest);
         }
@@ -93,7 +93,7 @@ public class PullMessageService extends ServiceThread {
         while (!this.isStopped()) {
             try {
                 PullRequest pullRequest = this.pullRequestQueue.take();
-                this.pullMessage(pullRequest);
+                this.pullMessage(pullRequest); /* 循环向Broker 拉取消费消息 */
             } catch (InterruptedException ignored) {
             } catch (Exception e) {
                 log.error("Pull Message Service Run Method exception", e);

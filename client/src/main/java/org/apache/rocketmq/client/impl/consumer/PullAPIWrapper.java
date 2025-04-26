@@ -51,7 +51,7 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 
 public class PullAPIWrapper {
     private final InternalLogger log = ClientLogger.getLog();
-    private final MQClientInstance mQClientFactory;
+    private final MQClientInstance mQClientFactory;  /* netty客户端 */
     private final String consumerGroup;
     private final boolean unitMode;
     private ConcurrentMap<MessageQueue, AtomicLong/* brokerId */> pullFromWhichNodeTable =
@@ -178,13 +178,13 @@ public class PullAPIWrapper {
             if (findBrokerResult.isSlave()) {
                 sysFlagInner = PullSysFlag.clearCommitOffsetFlag(sysFlagInner);
             }
-
+            /* ## 构建拉取消息报文 */
             PullMessageRequestHeader requestHeader = new PullMessageRequestHeader();
-            requestHeader.setConsumerGroup(this.consumerGroup);
-            requestHeader.setTopic(mq.getTopic());
-            requestHeader.setQueueId(mq.getQueueId());
-            requestHeader.setQueueOffset(offset);
-            requestHeader.setMaxMsgNums(maxNums);
+            requestHeader.setConsumerGroup(this.consumerGroup);/* 消费组 */
+            requestHeader.setTopic(mq.getTopic());            /* 主题 */
+            requestHeader.setQueueId(mq.getQueueId());        /* 分区 */
+            requestHeader.setQueueOffset(offset);             /* 消费偏移 */
+            requestHeader.setMaxMsgNums(maxNums);             /* 默认32个消息 */
             requestHeader.setSysFlag(sysFlagInner);
             requestHeader.setCommitOffset(commitOffset);
             requestHeader.setSuspendTimeoutMillis(brokerSuspendMaxTimeMillis);

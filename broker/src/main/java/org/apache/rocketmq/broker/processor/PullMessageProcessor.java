@@ -87,7 +87,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor {
     public boolean rejectRequest() {
         return false;
     }
-
+     /* 处理拉取消息请求 */
     private RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend)
         throws RemotingCommandException {
         final long beginTimeMills = this.brokerController.getMessageStore().now();

@@ -93,7 +93,7 @@ public class MQClientInstance {
     private final String clientId;
     private final long bootTimestamp = System.currentTimeMillis();
     private final ConcurrentMap<String/** group */, MQProducerInner> producerTable = new ConcurrentHashMap<String, MQProducerInner>();
-    private final ConcurrentMap<String/* group */, MQConsumerInner> consumerTable = new ConcurrentHashMap<String, MQConsumerInner>();
+    private final ConcurrentMap<String/** group */, MQConsumerInner> consumerTable = new ConcurrentHashMap<String, MQConsumerInner>(); /* 消费者集合 */
     private final ConcurrentMap<String/* group */, MQAdminExtInner> adminExtTable = new ConcurrentHashMap<String, MQAdminExtInner>();
     private final NettyClientConfig nettyClientConfig;
     private final MQClientAPIImpl mQClientAPIImpl;  /* 创建netty通讯客户端 */
@@ -112,9 +112,9 @@ public class MQClientInstance {
         }
     });
     private final ClientRemotingProcessor clientRemotingProcessor;
-    private final PullMessageService pullMessageService;
-    private final RebalanceService rebalanceService;
-    private final DefaultMQProducer defaultMQProducer; /* 生成者 */
+    private final PullMessageService pullMessageService; /* 消费者 - 消息拉取 - 工作线程 */
+    private final RebalanceService rebalanceService;     /* 消费者 - topic分区-重平衡 - 工作线程 */
+    private final DefaultMQProducer defaultMQProducer; /* 生产者 */
     private final ConsumerStatsManager consumerStatsManager;
     private final AtomicLong sendHeartbeatTimesTotal = new AtomicLong(0);
     private ServiceState serviceState = ServiceState.CREATE_JUST;
@@ -233,13 +233,13 @@ public class MQClientInstance {
                         this.mQClientAPIImpl.fetchNameServerAddr();
                     }
                     // Start request-response channel
-                    this.mQClientAPIImpl.start();
+                    this.mQClientAPIImpl.start(); /* 设置netty BootStrap Channel配置 */
                     // Start various schedule tasks
-                    this.startScheduledTask();
+                    this.startScheduledTask(); /* 各种定时任务 - 更新topic路由，consumer心跳保活 */
                     // Start pull service
-                    this.pullMessageService.start();
+                    this.pullMessageService.start(); /* 启动 拉取消息线程 - PullMessageService */
                     // Start rebalance service
-                    this.rebalanceService.start();
+                    this.rebalanceService.start();   /* 启动 topic消费重平衡 -线程  - RebalanceService */
                     // Start push service
                     this.defaultMQProducer.getDefaultMQProducerImpl().start(false);
                     log.info("the client factory [{}] start OK", this.clientId);
@@ -268,7 +268,7 @@ public class MQClientInstance {
             }, 1000 * 10, 1000 * 60 * 2, TimeUnit.MILLISECONDS);
         }
 
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() { /* 每30s从注册中心 拉取 topic路由信息 */
 
             @Override
             public void run() {
@@ -283,7 +283,7 @@ public class MQClientInstance {
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
-            public void run() {
+            public void run() {/* 每30s从注册中心 向 Broker发送心跳信息 */
                 try {
                     MQClientInstance.this.cleanOfflineBroker();
                     MQClientInstance.this.sendHeartbeatToAllBrokerWithLock();
@@ -956,7 +956,7 @@ public class MQClientInstance {
             MQConsumerInner impl = entry.getValue();
             if (impl != null) {
                 try {
-                    impl.doRebalance();
+                    impl.doRebalance(); /* 消费者重平衡 - DefaultMQPushConsumerImpl */
                 } catch (Throwable e) {
                     log.error("doRebalance exception", e);
                 }

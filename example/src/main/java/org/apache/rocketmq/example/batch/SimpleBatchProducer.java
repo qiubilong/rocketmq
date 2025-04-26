@@ -33,7 +33,7 @@ public class SimpleBatchProducer {
     public static void main(String[] args) throws Exception {
         DefaultMQProducer producer = new DefaultMQProducer(PRODUCER_GROUP);
         // Uncomment the following line while debugging, namesrvAddr should be set to your local address
-//        producer.setNamesrvAddr(DEFAULT_NAMESRVADDR);
+        producer.setNamesrvAddr(DEFAULT_NAMESRVADDR);
         producer.start();
 
         //If you just send messages of no more than 1MiB at a time, it is easy to use batch
