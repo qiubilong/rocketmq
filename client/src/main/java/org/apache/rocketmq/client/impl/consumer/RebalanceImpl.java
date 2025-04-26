@@ -46,13 +46,13 @@ public abstract class RebalanceImpl {
     protected final ConcurrentMap<MessageQueue, ProcessQueue> processQueueTable = new ConcurrentHashMap<MessageQueue, ProcessQueue>(64);
     protected final ConcurrentMap<String/* topic */, Set<MessageQueue>> topicSubscribeInfoTable =
         new ConcurrentHashMap<String, Set<MessageQueue>>();
-    protected final ConcurrentMap<String /** topic */, SubscriptionData> subscriptionInner =  /* 订阅的topic */
+    protected final ConcurrentMap<String /** topic */, SubscriptionData> subscriptionInner =  /* 订阅的topic分区 */
         new ConcurrentHashMap<String, SubscriptionData>();
     protected String consumerGroup;
     protected MessageModel messageModel;
     protected AllocateMessageQueueStrategy allocateMessageQueueStrategy;
     protected MQClientInstance mQClientFactory;
-
+    /* ## 1、消费者启动时会立即触发重平衡     2、定时任务默认每20秒触发一次重平衡    3、 Broker通知当topic路由信息变化时也会触发重平衡 */
     public RebalanceImpl(String consumerGroup, MessageModel messageModel,
         AllocateMessageQueueStrategy allocateMessageQueueStrategy,
         MQClientInstance mQClientFactory) {
@@ -256,8 +256,8 @@ public abstract class RebalanceImpl {
                 break;
             }
             case CLUSTERING: {
-                Set<MessageQueue> mqSet = this.topicSubscribeInfoTable.get(topic);
-                List<String> cidAll = this.mQClientFactory.findConsumerIdList(topic, consumerGroup); /* 拉取所有消费者 */
+                Set<MessageQueue> mqSet = this.topicSubscribeInfoTable.get(topic);/* 1、拉取消topic所有分区 */
+                List<String> cidAll = this.mQClientFactory.findConsumerIdList(topic, consumerGroup); /* 2、拉取消费组所有消费者 */
                 if (null == mqSet) {
                     if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                         log.warn("doRebalance, {}, but the topic[{}] not exist.", consumerGroup, topic);
@@ -271,15 +271,15 @@ public abstract class RebalanceImpl {
                 if (mqSet != null && cidAll != null) {
                     List<MessageQueue> mqAll = new ArrayList<MessageQueue>();
                     mqAll.addAll(mqSet);
-
-                    Collections.sort(mqAll);//排序
+                    /* 3、排序保证所有消费者计算顺序一致 */
+                    Collections.sort(mqAll);
                     Collections.sort(cidAll);
 
                     AllocateMessageQueueStrategy strategy = this.allocateMessageQueueStrategy;
 
                     List<MessageQueue> allocateResult = null;
                     try {
-                        allocateResult = strategy.allocate( /* 重平衡 messageQueue与消费者 - AllocateMessageQueueAveragely */
+                        allocateResult = strategy.allocate( /* 4、分区重平衡  - AllocateMessageQueueAveragely */
                             this.consumerGroup,
                             this.mQClientFactory.getClientId(),
                             mqAll,
@@ -294,7 +294,7 @@ public abstract class RebalanceImpl {
                     if (allocateResult != null) {
                         allocateResultSet.addAll(allocateResult);
                     }
-
+                                           /* 5、更新订阅关系 */
                     boolean changed = this.updateProcessQueueTableInRebalance(topic, allocateResultSet, isOrder);
                     if (changed) {
                         log.info(

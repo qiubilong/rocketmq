@@ -56,7 +56,7 @@ public class RebalancePushImpl extends RebalanceImpl {
         SubscriptionData subscriptionData = this.subscriptionInner.get(topic);
         long newVersion = System.currentTimeMillis();
         log.info("{} Rebalance changed, also update version: {}, {}", topic, subscriptionData.getSubVersion(), newVersion);
-        subscriptionData.setSubVersion(newVersion);
+        subscriptionData.setSubVersion(newVersion); /* ## 订阅分区版本号 --> 解决分区重新平衡一致性问题 */
 
         int currentQueueCount = this.processQueueTable.size();
         if (currentQueueCount != 0) {
@@ -76,7 +76,7 @@ public class RebalancePushImpl extends RebalanceImpl {
                 this.defaultMQPushConsumerImpl.getDefaultMQPushConsumer().setPullThresholdSizeForQueue(newVal);
             }
         }
-
+        /* ## 通知Broker最新分区结果 */
         // notify broker
         this.getmQClientFactory().sendHeartbeatToAllBrokerWithLock();
     }

@@ -730,7 +730,7 @@ public class MQClientAPIImpl {
                 this.pullMessageAsync(addr, request, timeoutMillis, pullCallback);
                 return null;
             case SYNC:
-                return this.pullMessageSync(addr, request, timeoutMillis);
+                return this.pullMessageSync(addr, request, timeoutMillis); /* 同步拉取消息 */
             default:
                 assert false;
                 break;
@@ -778,7 +778,7 @@ public class MQClientAPIImpl {
     ) throws RemotingException, InterruptedException, MQBrokerException {
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
-        return this.processPullResponse(response, addr);
+        return this.processPullResponse(response, addr); /* 处理拉取消息结果 */
     }
 
     private PullResult processPullResponse(
@@ -799,7 +799,7 @@ public class MQClientAPIImpl {
                 pullStatus = PullStatus.OFFSET_ILLEGAL;
                 break;
 
-            default:
+            default: //客户端分区不一致，服务端返回 SUBSCRIPTION_NOT_LATEST --> 抛出异常
                 throw new MQBrokerException(response.getCode(), response.getRemark(), addr);
         }
 

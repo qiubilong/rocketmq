@@ -955,8 +955,8 @@ public class MQClientInstance {
         for (Map.Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
             MQConsumerInner impl = entry.getValue();
             if (impl != null) {
-                try {
-                    impl.doRebalance(); /* 消费者重平衡 - DefaultMQPushConsumerImpl */
+                try {//旧版本
+                    impl.doRebalance(); /* 消费者分区重平衡- DefaultMQPushConsumerImpl */
                 } catch (Throwable e) {
                     log.error("doRebalance exception", e);
                 }

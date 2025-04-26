@@ -310,7 +310,7 @@ public class ProcessQueue { /* 消费者 -MessageQueue对应的消息缓存处�
             this.lastConsumeTimestamp = now;
             try {
                 if (!this.msgTreeMap.isEmpty()) {
-                    for (int i = 0; i < batchSize; i++) {
+                    for (int i = 0; i < batchSize; i++) {  /* 顺序获取消息 */
                         Map.Entry<Long, MessageExt> entry = this.msgTreeMap.pollFirstEntry();
                         if (entry != null) {
                             result.add(entry.getValue());

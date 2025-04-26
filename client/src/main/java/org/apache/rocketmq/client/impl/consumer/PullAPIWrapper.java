@@ -155,7 +155,7 @@ public class PullAPIWrapper {
         final PullCallback pullCallback
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         FindBrokerResult findBrokerResult =
-            this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(),
+            this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(), /* 查找Broker地址 */
                 this.recalculatePullFromWhichNode(mq), false);
         if (null == findBrokerResult) {
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(mq.getTopic());
@@ -189,7 +189,7 @@ public class PullAPIWrapper {
             requestHeader.setCommitOffset(commitOffset);
             requestHeader.setSuspendTimeoutMillis(brokerSuspendMaxTimeMillis);
             requestHeader.setSubscription(subExpression);
-            requestHeader.setSubVersion(subVersion);
+            requestHeader.setSubVersion(subVersion);         /* 订阅分区版本 --> 解决分区重平衡一致性 */
             requestHeader.setExpressionType(expressionType);
             requestHeader.setBname(mq.getBrokerName());
 
