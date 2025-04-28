@@ -477,7 +477,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
             // Success
             case PUT_OK:
                 sendOK = true;
-                response.setCode(ResponseCode.SUCCESS);
+                response.setCode(ResponseCode.SUCCESS); /* ## 消息写入成功 */
                 break;
             case FLUSH_DISK_TIMEOUT:
                 response.setCode(ResponseCode.FLUSH_DISK_TIMEOUT);
@@ -693,7 +693,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
                                     SendMessageRequestHeader requestHeader) {
         final RemotingCommand response = RemotingCommand.createResponseCommand(SendMessageResponseHeader.class);
 
-        response.setOpaque(request.getOpaque());
+        response.setOpaque(request.getOpaque());/* 客户端异步请求唯一标识 */
 
         response.addExtField(MessageConst.PROPERTY_MSG_REGION, this.brokerController.getBrokerConfig().getRegionId());
         response.addExtField(MessageConst.PROPERTY_TRACE_SWITCH, String.valueOf(this.brokerController.getBrokerConfig().isTraceOn()));

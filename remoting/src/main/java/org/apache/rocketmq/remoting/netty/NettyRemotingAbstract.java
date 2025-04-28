@@ -72,7 +72,7 @@ public abstract class NettyRemotingAbstract {
     /**
      * This map caches all on-going requests.
      */
-    protected final ConcurrentMap<Integer /** opaque */, ResponseFuture> responseTable = /* 等待响应的请求 */
+    protected final ConcurrentMap<Integer /** opaque */, ResponseFuture> responseTable = /* 等待响应的请求集合 */
         new ConcurrentHashMap<Integer, ResponseFuture>(256);
 
     /**
@@ -190,7 +190,7 @@ public abstract class NettyRemotingAbstract {
      * @param cmd request command.
      */
     public void processRequestCommand(final ChannelHandlerContext ctx, final RemotingCommand cmd) {
-        final Pair<NettyRequestProcessor, ExecutorService> matched = this.processorTable.get(cmd.getCode());/* 根据请求命令 查找处理器 */
+        final Pair<NettyRequestProcessor, ExecutorService> matched = this.processorTable.get(cmd.getCode());/* ## 1、根据请求命令 查找处理器 */
         final Pair<NettyRequestProcessor, ExecutorService> pair = null == matched ? this.defaultRequestProcessor : matched;
         final int opaque = cmd.getOpaque();
 
@@ -208,10 +208,10 @@ public abstract class NettyRemotingAbstract {
                                 if (!cmd.isOnewayRPC()) {
                                     if (response != null) {
                                         response.setOpaque(opaque);
-                                        response.markResponseType();
+                                        response.markResponseType();//标记为响应报文
                                         response.setSerializeTypeCurrentRPC(cmd.getSerializeTypeCurrentRPC());
                                         try {
-                                            ctx.writeAndFlush(response);
+                                            ctx.writeAndFlush(response);/* ## 3、响应处理结果 */
                                         } catch (Throwable e) {
                                             log.error("process request over, but response failed", e);
                                             log.error(cmd.toString());
@@ -224,7 +224,7 @@ public abstract class NettyRemotingAbstract {
                         };
                         if (pair.getObject1() instanceof AsyncNettyRequestProcessor) {
                             AsyncNettyRequestProcessor processor = (AsyncNettyRequestProcessor)pair.getObject1();
-                            processor.asyncProcessRequest(ctx, cmd, callback); /* 注册中心NameServer = DefaultRequestProcessor ； Broker接收消息=SendMessageProcessor */
+                            processor.asyncProcessRequest(ctx, cmd, callback); /* ## 2、处理请求 。 注册中心NameServer = DefaultRequestProcessor ； Broker接收消息=SendMessageProcessor */
                         } else {
                             NettyRequestProcessor processor = pair.getObject1();
                             RemotingCommand response = processor.processRequest(ctx, cmd);
@@ -413,9 +413,9 @@ public abstract class NettyRemotingAbstract {
 
         try {
             final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, timeoutMillis, null, null);
-            this.responseTable.put(opaque, responseFuture);
+            this.responseTable.put(opaque, responseFuture); /* 1、添加异步等待请求响应标记 */
             final SocketAddress addr = channel.remoteAddress();
-            channel.writeAndFlush(request).addListener(new ChannelFutureListener() { /* 写入请求数据 */
+            channel.writeAndFlush(request).addListener(new ChannelFutureListener() { /* 2、Channel写入请求数据 */
                 @Override
                 public void operationComplete(ChannelFuture f) throws Exception {
                     if (f.isSuccess()) {
@@ -431,7 +431,7 @@ public abstract class NettyRemotingAbstract {
                     log.warn("send a request command to channel <" + addr + "> failed.");
                 }
             });
-            /* 等待异步结果 */
+            /* 3、等待异步结果 */
             RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);
             if (null == responseCommand) {
                 if (responseFuture.isSendRequestOK()) {

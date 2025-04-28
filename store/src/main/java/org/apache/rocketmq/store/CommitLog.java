@@ -1313,7 +1313,7 @@ public class CommitLog {
             // PHY OFFSET
             long wroteOffset = fileFromOffset + byteBuffer.position();
 
-            Supplier<String> msgIdSupplier = () -> {
+            Supplier<String> msgIdSupplier = () -> { /*  msgId消息唯一标识 hostIp + 物理偏移 */
                 int sysflag = msgInner.getSysFlag();
                 int msgIdLen = (sysflag & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0 ? 4 + 4 + 8 : 16 + 4 + 8;
                 ByteBuffer msgIdBuffer = ByteBuffer.allocate(msgIdLen);
