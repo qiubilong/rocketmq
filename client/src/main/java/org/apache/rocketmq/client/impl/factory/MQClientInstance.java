@@ -98,7 +98,7 @@ public class MQClientInstance {
     private final NettyClientConfig nettyClientConfig;
     private final MQClientAPIImpl mQClientAPIImpl;  /* 创建netty通讯客户端 */
     private final MQAdminImpl mQAdminImpl;
-    private final ConcurrentMap<String/* Topic */, TopicRouteData> topicRouteTable = new ConcurrentHashMap<String, TopicRouteData>();
+    private final ConcurrentMap<String/** Topic */, TopicRouteData> topicRouteTable = new ConcurrentHashMap<String, TopicRouteData>(); /* Topic路由信息 */
     private final Lock lockNamesrv = new ReentrantLock();
     private final Lock lockHeartbeat = new ReentrantLock();
     private final ConcurrentMap<String/** Broker Name */, HashMap<Long/** brokerId */, String/** address */>> brokerAddrTable = /* topic所在Broker的地址 */
@@ -113,7 +113,7 @@ public class MQClientInstance {
     });
     private final ClientRemotingProcessor clientRemotingProcessor;
     private final PullMessageService pullMessageService; /* 消费者 - 消息拉取 - 工作线程 */
-    private final RebalanceService rebalanceService;     /* 消费者 - topic分区-重平衡 - 工作线程 */
+    private final RebalanceService rebalanceService;     /* 消费者 - topic分区消费-重平衡 - 工作线程 */
     private final DefaultMQProducer defaultMQProducer; /* 生产者 */
     private final ConsumerStatsManager consumerStatsManager;
     private final AtomicLong sendHeartbeatTimesTotal = new AtomicLong(0);
@@ -130,8 +130,8 @@ public class MQClientInstance {
         this.nettyClientConfig = new NettyClientConfig();
         this.nettyClientConfig.setClientCallbackExecutorThreads(clientConfig.getClientCallbackExecutorThreads());
         this.nettyClientConfig.setUseTLS(clientConfig.isUseTLS());
-        this.clientRemotingProcessor = new ClientRemotingProcessor(this);   /* 创建netty通讯客户端 */
-        this.mQClientAPIImpl = new MQClientAPIImpl(this.nettyClientConfig, this.clientRemotingProcessor, rpcHook, clientConfig);
+        this.clientRemotingProcessor = new ClientRemotingProcessor(this);
+        this.mQClientAPIImpl = new MQClientAPIImpl(this.nettyClientConfig, this.clientRemotingProcessor, rpcHook, clientConfig);/* 创建netty通讯客户端 */
 
         if (this.clientConfig.getNamesrvAddr() != null) {
             this.mQClientAPIImpl.updateNameServerAddressList(this.clientConfig.getNamesrvAddr());/* 指定注册中心nameServer地址 */
@@ -235,11 +235,11 @@ public class MQClientInstance {
                     // Start request-response channel
                     this.mQClientAPIImpl.start(); /* 设置netty BootStrap Channel配置 */
                     // Start various schedule tasks
-                    this.startScheduledTask(); /* 各种定时任务 - 更新topic路由，consumer心跳保活 */
+                    this.startScheduledTask(); /* 各种定时任务 - 拉取topic路由，consumer心跳保活 */
                     // Start pull service
-                    this.pullMessageService.start(); /* 启动 拉取消息线程 - PullMessageService */
+                    this.pullMessageService.start(); /* 启动-消费者 -  拉取消息线程 - PullMessageService */
                     // Start rebalance service
-                    this.rebalanceService.start();   /* 启动 topic消费重平衡 -线程  - RebalanceService */
+                    this.rebalanceService.start();   /* 启动-消费者 - topic分区重平衡 -线程  - RebalanceService */
                     // Start push service
                     this.defaultMQProducer.getDefaultMQProducerImpl().start(false);
                     log.info("the client factory [{}] start OK", this.clientId);
@@ -506,7 +506,7 @@ public class MQClientInstance {
         }
     }
 
-    public boolean updateTopicRouteInfoFromNameServer(final String topic) {/* 更新topic分区和路由信息 */
+    public boolean updateTopicRouteInfoFromNameServer(final String topic) {/* 拉取topic分区和路由信息 */
         return updateTopicRouteInfoFromNameServer(topic, false, null);
     }
 
@@ -948,14 +948,14 @@ public class MQClientInstance {
     }
 
     public void rebalanceImmediately() {
-        this.rebalanceService.wakeup();
+        this.rebalanceService.wakeup();//唤醒重平衡工作线程，执行doRebalance()
     }
 
     public void doRebalance() {
         for (Map.Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
             MQConsumerInner impl = entry.getValue();
             if (impl != null) {
-                try {//旧版本
+                try {//旧版本加锁，保证重平衡一致性。新版本使用 排序参数&相同算法 得出相同结果，再加重平衡版本，保证一致性
                     impl.doRebalance(); /* 消费者分区重平衡- DefaultMQPushConsumerImpl */
                 } catch (Throwable e) {
                     log.error("doRebalance exception", e);

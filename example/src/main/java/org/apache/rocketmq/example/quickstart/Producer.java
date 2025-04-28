@@ -72,6 +72,8 @@ public class Producer {
 
 
                 System.out.printf("%s%n", sendResult);
+
+                Thread.sleep(1000);
             } catch (Exception e) {
                 e.printStackTrace();
                 Thread.sleep(1000);

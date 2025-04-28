@@ -120,7 +120,7 @@ public class BrokerController {
     private final NettyServerConfig nettyServerConfig;
     private final NettyClientConfig nettyClientConfig;
     private final MessageStoreConfig messageStoreConfig;
-    private final ConsumerOffsetManager consumerOffsetManager;
+    private final ConsumerOffsetManager consumerOffsetManager; /* 消费者偏移管理器 - ConsumerOffsetManager */
     private final ConsumerManager consumerManager;
     private final ConsumerFilterManager consumerFilterManager;
     private final ProducerManager producerManager;
@@ -132,7 +132,7 @@ public class BrokerController {
     private final SubscriptionGroupManager subscriptionGroupManager;
     private final ConsumerIdsChangeListener consumerIdsChangeListener;
     private final RebalanceLockManager rebalanceLockManager = new RebalanceLockManager();
-    private final BrokerOuterAPI brokerOuterAPI;
+    private final BrokerOuterAPI brokerOuterAPI; /* 对外（NameServer）通讯Netty客户端 */
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "BrokerControllerScheduledThread"));
     private final SlaveSynchronize slaveSynchronize;
@@ -152,8 +152,8 @@ public class BrokerController {
     private final BrokerFastFailure brokerFastFailure;
     private final Configuration configuration;
     private final Map<Class, AccessValidator> accessValidatorMap = new HashMap<Class, AccessValidator>();
-    private MessageStore messageStore;
-    private RemotingServer remotingServer;
+    private MessageStore messageStore;     /* ## 消息存储管理器 - DefaultMessageStore */
+    private RemotingServer remotingServer; /* ## Broker Netty服务器 - NettyRemotingServer */
     private RemotingServer fastRemotingServer;
     private TopicConfigManager topicConfigManager;
     private ExecutorService sendMessageExecutor;
@@ -189,7 +189,7 @@ public class BrokerController {
         this.topicConfigManager = messageStoreConfig.isEnableLmq() ? new LmqTopicConfigManager(this) : new TopicConfigManager(this);
         this.pullMessageProcessor = new PullMessageProcessor(this); /* 拉取消息处理器 */
         this.pullRequestHoldService = messageStoreConfig.isEnableLmq() ? new LmqPullRequestHoldService(this) : new PullRequestHoldService(this);
-        this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService);
+        this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService);//新消息通知
         this.consumerIdsChangeListener = new DefaultConsumerIdsChangeListener(this);
         this.consumerManager = new ConsumerManager(this.consumerIdsChangeListener);
         this.consumerFilterManager = new ConsumerFilterManager(this);
@@ -197,7 +197,7 @@ public class BrokerController {
         this.clientHousekeepingService = new ClientHousekeepingService(this);
         this.broker2Client = new Broker2Client(this);
         this.subscriptionGroupManager = messageStoreConfig.isEnableLmq() ? new LmqSubscriptionGroupManager(this) : new SubscriptionGroupManager(this);
-        this.brokerOuterAPI = new BrokerOuterAPI(nettyClientConfig);
+        this.brokerOuterAPI = new BrokerOuterAPI(nettyClientConfig);/* 对外通讯Netty客户端 */
         this.filterServerManager = new FilterServerManager(this);
 
         this.slaveSynchronize = new SlaveSynchronize(this);
@@ -243,13 +243,13 @@ public class BrokerController {
     public boolean initialize() throws CloneNotSupportedException {
         boolean result = this.topicConfigManager.load();
 
-        result = result && this.consumerOffsetManager.load();
+        result = result && this.consumerOffsetManager.load(); //## 加载消费进度 - ConsumerOffsetManager
         result = result && this.subscriptionGroupManager.load();
         result = result && this.consumerFilterManager.load();
 
         if (result) {
             try {
-                this.messageStore =
+                this.messageStore =  /* 1、实例化 消息存储管理器  - CommitLog */
                     new DefaultMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener,
                         this.brokerConfig);
                 if (messageStoreConfig.isEnableDLegerCommitLog()) {
@@ -269,7 +269,7 @@ public class BrokerController {
 
         result = result && this.messageStore.load();
 
-        if (result) {             /* 创建Broker Netty 服务器 10911 */
+        if (result) {             /* 2、创建Broker Netty 服务器 10911 */
             this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.clientHousekeepingService);
             NettyServerConfig fastConfig = (NettyServerConfig) this.nettyServerConfig.clone();
             fastConfig.setListenPort(nettyServerConfig.getListenPort() - 2);
@@ -346,7 +346,7 @@ public class BrokerController {
                 Executors.newFixedThreadPool(this.brokerConfig.getConsumerManageThreadPoolNums(), new ThreadFactoryImpl(
                     "ConsumerManageThread_"));
 
-            this.registerProcessor();
+            this.registerProcessor(); /* 3、注册Broker Netty 服务器 请求处理器 */
 
             final long initialDelay = UtilAll.computeNextMorningTimeMillis() - System.currentTimeMillis();
             final long period = 1000 * 60 * 60 * 24;
@@ -360,10 +360,10 @@ public class BrokerController {
 
             this.scheduledExecutorService.scheduleAtFixedRate(() -> {
                 try {
-                    BrokerController.this.consumerOffsetManager.persist();
+                    BrokerController.this.consumerOffsetManager.persist(); /* ## 每5s持久化消费进度 */
                 } catch (Throwable e) {
                     log.error("schedule persist consumerOffset error.", e);
-                }
+                }                                    //5s
             }, 1000 * 10, this.brokerConfig.getFlushConsumerOffsetInterval(), TimeUnit.MILLISECONDS);
 
             this.scheduledExecutorService.scheduleAtFixedRate(() -> {
@@ -543,7 +543,7 @@ public class BrokerController {
 
     public void registerProcessor() {
         /*
-         * 生产者 - 生产消息处理器 - SendMessageProcessor
+         * ## 生产端 - 生产消息处理器 - SendMessageProcessor
          */
         SendMessageProcessor sendProcessor = new SendMessageProcessor(this);
         sendProcessor.registerSendMessageHook(sendMessageHookList);
@@ -558,7 +558,7 @@ public class BrokerController {
         this.fastRemotingServer.registerProcessor(RequestCode.SEND_BATCH_MESSAGE, sendProcessor, this.sendMessageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.CONSUMER_SEND_MSG_BACK, sendProcessor, this.sendMessageExecutor);
         /*
-         * 消费者 -拉取消息处理器 -  PullMessageProcessor
+         * ## 消费端 -拉取消息处理器 -  PullMessageProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.PULL_MESSAGE, this.pullMessageProcessor, this.pullMessageExecutor);
         this.pullMessageProcessor.registerConsumeMessageHook(consumeMessageHookList);
@@ -597,7 +597,7 @@ public class BrokerController {
         this.fastRemotingServer.registerProcessor(RequestCode.CHECK_CLIENT_CONFIG, clientProcessor, this.clientManageExecutor);
 
         /*
-         * 消费者 -消费偏移 -  ConsumerManageProcessor
+         * ## 消费端 -消费偏移维护 -  ConsumerManageProcessor
          */
         ConsumerManageProcessor consumerManageProcessor = new ConsumerManageProcessor(this);
         this.remotingServer.registerProcessor(RequestCode.GET_CONSUMER_LIST_BY_GROUP, consumerManageProcessor, this.consumerManageExecutor);
@@ -856,7 +856,7 @@ public class BrokerController {
         }
 
         if (this.remotingServer != null) {
-            this.remotingServer.start();
+            this.remotingServer.start(); /* 启动Broker Netty服务器 */
         }
 
         if (this.fastRemotingServer != null) {
@@ -868,7 +868,7 @@ public class BrokerController {
         }
 
         if (this.brokerOuterAPI != null) {
-            this.brokerOuterAPI.start();
+            this.brokerOuterAPI.start(); /* 启动对外（NameServer）通讯Netty客户端 */
         }
 
         if (this.pullRequestHoldService != null) {

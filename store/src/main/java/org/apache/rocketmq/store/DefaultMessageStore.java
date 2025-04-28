@@ -138,7 +138,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
             this.commitLog = new DLedgerCommitLog(this);
         } else {
-            this.commitLog = new CommitLog(this); /* 消息存储文件 - 所有topic的消息都写入这个文件 */
+            this.commitLog = new CommitLog(this); /* ## 消息最终存储文件 - 所有topic的消息都写入这个文件 */
         }
         this.consumeQueueTable = new ConcurrentHashMap<>(32);
 
@@ -152,7 +152,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         } else {
             this.haService = null;
         }
-        this.reputMessageService = new ReputMessageService(); /* 建立消息 消费offset和time索引 - 工作线程 */
+        this.reputMessageService = new ReputMessageService(); /* ## 消息offset和key索引 - 构建线程 */
 
         this.scheduleMessageService = new ScheduleMessageService(this);
 
@@ -167,8 +167,8 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         this.indexService.start();
 
         this.dispatcherList = new LinkedList<>();
-        this.dispatcherList.addLast(new CommitLogDispatcherBuildConsumeQueue());/* 消息消费offset索引 */
-        this.dispatcherList.addLast(new CommitLogDispatcherBuildIndex());/* 时间索引 */
+        this.dispatcherList.addLast(new CommitLogDispatcherBuildConsumeQueue());/* 建立消息offset索引 */
+        this.dispatcherList.addLast(new CommitLogDispatcherBuildIndex());/* 建立消息key索引 */
 
         File file = new File(StorePathConfigHelper.getLockFile(messageStoreConfig.getStorePathRootDir()));
         MappedFile.ensureDirOK(file.getParent());

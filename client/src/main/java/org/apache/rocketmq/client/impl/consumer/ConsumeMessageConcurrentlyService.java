@@ -276,7 +276,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 break;
             case CLUSTERING:
                 List<MessageExt> msgBackFailed = new ArrayList<MessageExt>(consumeRequest.getMsgs().size());
-                for (int i = ackIndex + 1; i < consumeRequest.getMsgs().size(); i++) {
+                for (int i = ackIndex + 1; i < consumeRequest.getMsgs().size(); i++) {//  RECONSUME_LATER --> ackIndex = -1  --> 转存重试队列
                     MessageExt msg = consumeRequest.getMsgs().get(i);
                     boolean result = this.sendMessageBack(msg, context);
                     if (!result) {
@@ -287,7 +287,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
 
                 if (!msgBackFailed.isEmpty()) {
                     consumeRequest.getMsgs().removeAll(msgBackFailed);
-
+                    /* 5s后重试消费失败消息 */
                     this.submitConsumeRequestLater(msgBackFailed, consumeRequest.getProcessQueue(), consumeRequest.getMessageQueue());
                 }
                 break;
@@ -297,7 +297,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
 
         long offset = consumeRequest.getProcessQueue().removeMessage(consumeRequest.getMsgs());
         if (offset >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
-            this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), offset, true);
+            this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), offset, true);/* 原子更新消费者offset偏移 */
         }
     }
 

@@ -37,7 +37,7 @@ public class ConsumerOffsetManager extends ConfigManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     protected static final String TOPIC_GROUP_SEPARATOR = "@";
 
-    protected ConcurrentMap<String/* topic@group */, ConcurrentMap<Integer, Long>> offsetTable =
+    protected ConcurrentMap<String/* topic@group */, ConcurrentMap<Integer, Long>> offsetTable = /* 消费进度 */
         new ConcurrentHashMap<String, ConcurrentMap<Integer, Long>>(512);
 
     protected transient BrokerController brokerController;

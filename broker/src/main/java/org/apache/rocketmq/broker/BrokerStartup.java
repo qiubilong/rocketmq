@@ -112,7 +112,7 @@ public class BrokerStartup {
                 messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
             }
 
-            if (commandLine.hasOption('c')) {
+            if (commandLine.hasOption('c')) {//解析配置文件
                 String file = commandLine.getOptionValue('c');
                 if (file != null) {
                     configFile = file;
@@ -138,7 +138,7 @@ public class BrokerStartup {
                 System.exit(-2);
             }
 
-            String namesrvAddr = brokerConfig.getNamesrvAddr(); /* Topic路由注册中心 地址*/
+            String namesrvAddr = brokerConfig.getNamesrvAddr(); //注册中心地址
             if (null != namesrvAddr) {
                 try {
                     String[] addrArray = namesrvAddr.split(";");
@@ -209,7 +209,7 @@ public class BrokerStartup {
             MixAll.printObjectProperties(log, nettyClientConfig);
             MixAll.printObjectProperties(log, messageStoreConfig);
 
-            final BrokerController controller = new BrokerController( /* 1、创建Broker */
+            final BrokerController controller = new BrokerController( /* ## 1、创建Broker */
                 brokerConfig,
                 nettyServerConfig,
                 nettyClientConfig,
@@ -217,7 +217,7 @@ public class BrokerStartup {
             // remember all configs to prevent discard
             controller.getConfiguration().registerConfig(properties);
 
-            boolean initResult = controller.initialize();            /* 2、初始化Broker */
+            boolean initResult = controller.initialize();            /* ## 2、初始化消息存储文件CommitLog & 启动Broker Netty服务器 */
             if (!initResult) {
                 controller.shutdown();
                 System.exit(-3);

@@ -88,7 +88,7 @@ public class CommitLog {
             this.mappedFileQueue = new MultiPathMappedFileQueue(defaultMessageStore.getMessageStoreConfig(),
                     defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
                     defaultMessageStore.getAllocateMappedFileService(), this::getFullStorePaths);
-        } else {   /* CommitLog文件 */
+        } else {   /* ## 创建 CommitLog 内存映射文件 */
             this.mappedFileQueue = new MappedFileQueue(storePath,
                     defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
                     defaultMessageStore.getAllocateMappedFileService());

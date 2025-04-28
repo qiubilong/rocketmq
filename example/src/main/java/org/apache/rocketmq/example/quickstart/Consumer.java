@@ -23,12 +23,14 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.remoting.common.RemotingHelper;
 
 import java.util.List;
 
 /**
  * This example shows how to subscribe and consume messages using providing {@link DefaultMQPushConsumer}.
  */
+
 public class Consumer {
 
     public static final String CONSUMER_GROUP = "please_rename_unique_group_name_4";
@@ -50,9 +52,16 @@ public class Consumer {
         MessageListenerConcurrently messageListenerConcurrently = new MessageListenerConcurrently() {
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
-                System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
-                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-            }
+                for (MessageExt msg : msgs) {
+                    try {
+                        System.out.println("收到消息:"+msg.getMsgId()+" 内容:"+new String(msg.getBody(), RemotingHelper.DEFAULT_CHARSET));
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+
+                }
+                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+            };
         };
         consumer.registerMessageListener(messageListenerConcurrently);
 

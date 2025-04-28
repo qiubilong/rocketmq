@@ -646,7 +646,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                         null);
                 }
 
-                mQClientFactory.start(); /* == 启动消费者各个组件线程 */
+                mQClientFactory.start(); /* ## 启动消费者各个组件线程 */
                 log.info("the consumer [{}] start OK.", this.defaultMQPushConsumer.getConsumerGroup());
                 this.serviceState = ServiceState.RUNNING;
                 break;
@@ -661,10 +661,10 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 break;
         }
 
-        this.updateTopicSubscribeInfoWhenSubscriptionChanged();
-        this.mQClientFactory.checkClientInBroker();
-        this.mQClientFactory.sendHeartbeatToAllBrokerWithLock();
-        this.mQClientFactory.rebalanceImmediately();
+        this.updateTopicSubscribeInfoWhenSubscriptionChanged(); /* ## 拉取topic路由*/
+        this.mQClientFactory.checkClientInBroker();             /* ## 建立Broker连接Channel */
+        this.mQClientFactory.sendHeartbeatToAllBrokerWithLock();/* ## 发送心跳 */
+        this.mQClientFactory.rebalanceImmediately();            /* ## topic分区消费重平衡 */
     }
 
     private void checkConfig() throws MQClientException {
@@ -878,7 +878,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         if (subTable != null) {
             for (final Map.Entry<String, SubscriptionData> entry : subTable.entrySet()) {
                 final String topic = entry.getKey();
-                this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
+                this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);/* 拉取topic路由信息 */
             }
         }
     }

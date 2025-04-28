@@ -220,7 +220,7 @@ public abstract class RebalanceImpl {
             for (final Map.Entry<String, SubscriptionData> entry : subTable.entrySet()) {
                 final String topic = entry.getKey();
                 try {
-                    this.rebalanceByTopic(topic, isOrder);/* 消费者重平衡 */
+                    this.rebalanceByTopic(topic, isOrder);/* 消费者分区重平衡 */
                 } catch (Throwable e) {
                     if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                         log.warn("rebalanceByTopic Exception", e);
@@ -271,7 +271,7 @@ public abstract class RebalanceImpl {
                 if (mqSet != null && cidAll != null) {
                     List<MessageQueue> mqAll = new ArrayList<MessageQueue>();
                     mqAll.addAll(mqSet);
-                    /* 3、排序保证所有消费者计算顺序一致 */
+                    /* 3、排序参数，保证所有消费者计算顺序一致 */
                     Collections.sort(mqAll);
                     Collections.sort(cidAll);
 
@@ -279,7 +279,7 @@ public abstract class RebalanceImpl {
 
                     List<MessageQueue> allocateResult = null;
                     try {
-                        allocateResult = strategy.allocate( /* 4、分区重平衡  - AllocateMessageQueueAveragely */
+                        allocateResult = strategy.allocate( /* 4、消费分区重平衡  - AllocateMessageQueueAveragely */
                             this.consumerGroup,
                             this.mQClientFactory.getClientId(),
                             mqAll,
@@ -404,7 +404,7 @@ public abstract class RebalanceImpl {
             }
         }
 
-        this.dispatchPullRequest(pullRequestList); /* 3、消费消息- RebalancePushImpl */
+        this.dispatchPullRequest(pullRequestList); /* 3、拉取消息通知- RebalancePushImpl */
 
         return changed;
     }

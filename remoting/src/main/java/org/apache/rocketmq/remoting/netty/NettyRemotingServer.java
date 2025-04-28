@@ -238,7 +238,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
 
         try {
-            ChannelFuture sync = this.serverBootstrap.bind().sync();/* 实例化NioServerSocketChannel & 监听客户端连接 */
+            ChannelFuture sync = this.serverBootstrap.bind().sync();/* 实例化NioServerSocketChannel &绑定端口 & 监听客户端连接 */
             InetSocketAddress addr = (InetSocketAddress) sync.channel().localAddress();
             this.port = addr.getPort();
         } catch (InterruptedException e1) {
