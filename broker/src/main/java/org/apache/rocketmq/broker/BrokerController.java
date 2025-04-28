@@ -898,7 +898,7 @@ public class BrokerController {
                 } catch (Throwable e) {
                     log.error("registerBrokerAll Exception", e);
                 }
-            }
+            }                   /* ## 每30s广播注册topic信息 */
         }, 1000 * 10, Math.max(10000, Math.min(brokerConfig.getRegisterNameServerPeriod(), 60000)), TimeUnit.MILLISECONDS);
 
         if (this.brokerStatsManager != null) {

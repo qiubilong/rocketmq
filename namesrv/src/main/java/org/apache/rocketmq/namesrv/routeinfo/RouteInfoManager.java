@@ -53,11 +53,11 @@ import org.apache.rocketmq.remoting.common.RemotingUtil;
 public class RouteInfoManager {/* Topic路由注册中心 */
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
     private final static long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;//2分钟
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final HashMap<String/* topic */, Map<String /* brokerName */ , QueueData>> topicQueueTable; /* topic信息 */
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();//更新数据读写锁
+    private final HashMap<String/* topic */, Map<String /* brokerName */ , QueueData>> topicQueueTable; /* topic分区信息 */
     private final HashMap<String/** brokerName */, BrokerData> brokerAddrTable;
     private final HashMap<String/** clusterName */, Set<String/** brokerName */>> clusterAddrTable;
-    private final HashMap<String/** brokerAddr */, BrokerLiveInfo> brokerLiveTable;
+    private final HashMap<String/** brokerAddr */, BrokerLiveInfo> brokerLiveTable;  /* 在线可用的Broker */
     private final HashMap<String/** brokerAddr */, List<String>/** Filter Server */> filterServerTable;
 
     public RouteInfoManager() {
@@ -188,7 +188,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
                                 topicConfigWrapper.getTopicConfigTable();
                         if (tcTable != null) {
                             for (Map.Entry<String, TopicConfig> entry : tcTable.entrySet()) {
-                                this.createAndUpdateQueueData(brokerName, entry.getValue()); /* 更新Topic信息 */
+                                this.createAndUpdateQueueData(brokerName, entry.getValue()); /* 注册Topic信息 */
                             }
                         }
                     }

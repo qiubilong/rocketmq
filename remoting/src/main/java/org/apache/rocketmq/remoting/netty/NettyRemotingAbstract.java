@@ -79,7 +79,7 @@ public abstract class NettyRemotingAbstract {
      * This container holds all processors per request code, aka, for each incoming request, we may look up the
      * responding processor in this map to handle the request.
      */
-    protected final HashMap<Integer/* request code */, Pair<NettyRequestProcessor, ExecutorService>> processorTable =
+    protected final HashMap<Integer/** request code */, Pair<NettyRequestProcessor, ExecutorService>> processorTable =  /* 请求处理器 */
         new HashMap<Integer, Pair<NettyRequestProcessor, ExecutorService>>(64);
 
     /**
@@ -589,7 +589,7 @@ public abstract class NettyRemotingAbstract {
                 try {
                     NettyEvent event = this.eventQueue.poll(3000, TimeUnit.MILLISECONDS);
                     if (event != null && listener != null) {
-                        switch (event.getType()) {
+                        switch (event.getType()) {  /* 维护 在线 Broker  - BrokerHousekeepingService */
                             case IDLE:
                                 listener.onChannelIdle(event.getRemoteAddr(), event.getChannel());
                                 break;

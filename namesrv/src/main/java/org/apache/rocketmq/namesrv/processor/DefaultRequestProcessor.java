@@ -97,7 +97,7 @@ public class DefaultRequestProcessor extends AsyncNettyRequestProcessor implemen
             case RequestCode.REGISTER_BROKER:
                 Version brokerVersion = MQVersion.value2Version(request.getVersion());
                 if (brokerVersion.ordinal() >= MQVersion.Version.V3_0_11.ordinal()) {
-                    return this.registerBrokerWithFilterServer(ctx, request); /* 注册Broker信息 */
+                    return this.registerBrokerWithFilterServer(ctx, request); /* 注册Topic和Broker路由信息 */
                 } else {
                     return this.registerBroker(ctx, request);
                 }
