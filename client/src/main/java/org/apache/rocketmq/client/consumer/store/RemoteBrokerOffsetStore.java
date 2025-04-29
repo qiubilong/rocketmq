@@ -124,7 +124,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
             if (offset != null) {
                 if (mqs.contains(mq)) {
                     try {
-                        this.updateConsumeOffsetToBroker(mq, offset.get());
+                        this.updateConsumeOffsetToBroker(mq, offset.get()); /* ## 更新消费偏移 */
                         log.info("[persistAll] Group: {} ClientId: {} updateConsumeOffsetToBroker {} {}",
                             this.groupName,
                             this.mQClientFactory.getClientId(),
@@ -213,7 +213,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
             requestHeader.setCommitOffset(offset);
             requestHeader.setBname(mq.getBrokerName());
 
-            if (isOneway) {
+            if (isOneway) {/* ## 更新消费偏移 */
                 this.mQClientFactory.getMQClientAPIImpl().updateConsumerOffsetOneway(
                     findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
             } else {

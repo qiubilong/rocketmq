@@ -567,7 +567,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 break;
             case RUNNING:
                 this.consumeMessageService.shutdown(awaitTerminateMillis);
-                this.persistConsumerOffset();
+                this.persistConsumerOffset();/* ## 应用关闭前，先持久化消费偏移 */
                 this.mQClientFactory.unregisterConsumer(this.defaultMQPushConsumer.getConsumerGroup());
                 this.mQClientFactory.shutdown();
                 log.info("the consumer [{}] shutdown OK", this.defaultMQPushConsumer.getConsumerGroup());

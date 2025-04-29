@@ -208,7 +208,7 @@ public class ProcessQueue { /* 消费者 - MessageQueue对应的消息缓存队�
                     msgCount.addAndGet(removedCnt);
 
                     if (!msgTreeMap.isEmpty()) {
-                        result = msgTreeMap.firstKey();
+                        result = msgTreeMap.firstKey();/* ## 修正最小消费偏移，防止并发消费情况下后offset的先消费 */
                     }
                 }
             } finally {
