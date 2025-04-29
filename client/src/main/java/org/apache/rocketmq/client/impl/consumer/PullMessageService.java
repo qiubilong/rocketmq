@@ -27,7 +27,7 @@ import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 
-public class PullMessageService extends ServiceThread { /* 循环拉取服务器消息 - 工作线程 */
+public class PullMessageService extends ServiceThread { /* 循环拉取Broker消息 - 工作线程 */
     private final InternalLogger log = ClientLogger.getLog();
     private final LinkedBlockingQueue<PullRequest> pullRequestQueue = new LinkedBlockingQueue<PullRequest>(); /* 拉取消息异步请求队列 */
     private final MQClientInstance mQClientFactory;

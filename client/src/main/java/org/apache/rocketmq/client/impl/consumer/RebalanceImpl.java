@@ -256,8 +256,8 @@ public abstract class RebalanceImpl {
                 break;
             }
             case CLUSTERING: {
-                Set<MessageQueue> mqSet = this.topicSubscribeInfoTable.get(topic);/* 1、拉取消topic所有分区 */
-                List<String> cidAll = this.mQClientFactory.findConsumerIdList(topic, consumerGroup); /* 2、拉取消费组所有消费者 */
+                Set<MessageQueue> mqSet = this.topicSubscribeInfoTable.get(topic);/* ## 1、拉取topic所有分区 */
+                List<String> cidAll = this.mQClientFactory.findConsumerIdList(topic, consumerGroup); /* ## 2、拉取本消费组所有消费者 */
                 if (null == mqSet) {
                     if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                         log.warn("doRebalance, {}, but the topic[{}] not exist.", consumerGroup, topic);
@@ -271,7 +271,7 @@ public abstract class RebalanceImpl {
                 if (mqSet != null && cidAll != null) {
                     List<MessageQueue> mqAll = new ArrayList<MessageQueue>();
                     mqAll.addAll(mqSet);
-                    /* 3、排序参数，保证所有消费者计算顺序一致 */
+                    /* ## 3、排序参数，保证所有消费者计算顺序一致 */
                     Collections.sort(mqAll);
                     Collections.sort(cidAll);
 
@@ -279,7 +279,7 @@ public abstract class RebalanceImpl {
 
                     List<MessageQueue> allocateResult = null;
                     try {
-                        allocateResult = strategy.allocate( /* 4、消费分区重平衡  - AllocateMessageQueueAveragely */
+                        allocateResult = strategy.allocate( /* ## 4、消费分区重平衡  - AllocateMessageQueueAveragely */
                             this.consumerGroup,
                             this.mQClientFactory.getClientId(),
                             mqAll,
@@ -294,14 +294,14 @@ public abstract class RebalanceImpl {
                     if (allocateResult != null) {
                         allocateResultSet.addAll(allocateResult);
                     }
-                                           /* 5、更新订阅关系 */
+                                           /* ## 5、更新分区重平衡结果，开始拉取消息 */
                     boolean changed = this.updateProcessQueueTableInRebalance(topic, allocateResultSet, isOrder);
                     if (changed) {
                         log.info(
                             "rebalanced result changed. allocateMessageQueueStrategyName={}, group={}, topic={}, clientId={}, mqAllSize={}, cidAllSize={}, rebalanceResultSize={}, rebalanceResultSet={}",
                             strategy.getName(), consumerGroup, topic, this.mQClientFactory.getClientId(), mqSet.size(), cidAll.size(),
                             allocateResultSet.size(), allocateResultSet);
-                        this.messageQueueChanged(topic, mqSet, allocateResultSet);
+                        this.messageQueueChanged(topic, mqSet, allocateResultSet);/* ## 6、 更新分配版本号，通知Broker最新分区结果 */
                     }
                 }
                 break;
@@ -390,7 +390,7 @@ public abstract class RebalanceImpl {
                         log.info("doRebalance, {}, mq already exists, {}", consumerGroup, mq);
                     } else {
                         log.info("doRebalance, {}, add a new mq, {}", consumerGroup, mq);
-                        PullRequest pullRequest = new PullRequest(); /* 2.1  构建消费消息请求*/
+                        PullRequest pullRequest = new PullRequest(); /* 2.1  构建拉取消息请求 */
                         pullRequest.setConsumerGroup(consumerGroup);
                         pullRequest.setNextOffset(nextOffset);
                         pullRequest.setMessageQueue(mq);
@@ -404,7 +404,7 @@ public abstract class RebalanceImpl {
             }
         }
 
-        this.dispatchPullRequest(pullRequestList); /* 3、拉取消息通知- RebalancePushImpl */
+        this.dispatchPullRequest(pullRequestList); /* 3、## 通知拉取消息- RebalancePushImpl */
 
         return changed;
     }

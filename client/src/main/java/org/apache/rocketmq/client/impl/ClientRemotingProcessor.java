@@ -132,7 +132,7 @@ public class ClientRemotingProcessor extends AsyncNettyRequestProcessor implemen
         return null;
     }
 
-    public RemotingCommand notifyConsumerIdsChanged(ChannelHandlerContext ctx,
+    public RemotingCommand notifyConsumerIdsChanged(ChannelHandlerContext ctx,/* ## 消费者列表发生变化，需要执行topic分区重平衡 */
         RemotingCommand request) throws RemotingCommandException {
         try {
             final NotifyConsumerIdsChangedRequestHeader requestHeader =
