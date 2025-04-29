@@ -108,12 +108,12 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     private final ArrayList<ConsumeMessageHook> consumeMessageHookList = new ArrayList<ConsumeMessageHook>();
     private final RPCHook rpcHook;
     private volatile ServiceState serviceState = ServiceState.CREATE_JUST;
-    private MQClientInstance mQClientFactory;
+    private MQClientInstance mQClientFactory;     /* ## Netty通讯客户端 */
     private PullAPIWrapper pullAPIWrapper;
     private volatile boolean pause = false;
     private boolean consumeOrderly = false;
-    private MessageListener messageListenerInner; /* 业务 - 消息监听处理器 */
-    private OffsetStore offsetStore;
+    private MessageListener messageListenerInner; /* ## 业务端 - 消息监听处理器 */
+    private OffsetStore offsetStore;              /* ## 消费偏移Offset存储器 - RemoteBrokerOffsetStore */
     private ConsumeMessageService consumeMessageService;
     private long queueFlowControlTimes = 0;
     private long queueMaxSpanFlowControlTimes = 0;
@@ -646,7 +646,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                         null);
                 }
 
-                mQClientFactory.start(); /* ## 启动消费者各个组件线程 */
+                mQClientFactory.start(); /* ## 启动消费者各个组件线程 - 心跳保活/拉取消息/拉取Topic路由/Topic分区重平衡 */
                 log.info("the consumer [{}] start OK.", this.defaultMQPushConsumer.getConsumerGroup());
                 this.serviceState = ServiceState.RUNNING;
                 break;
@@ -890,9 +890,9 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     public void subscribe(String topic, String subExpression) throws MQClientException {
         try {
             SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(topic, subExpression);
-            this.rebalanceImpl.getSubscriptionInner().put(topic, subscriptionData);
+            this.rebalanceImpl.getSubscriptionInner().put(topic, subscriptionData);/* 保存订阅topic */
             if (this.mQClientFactory != null) {
-                this.mQClientFactory.sendHeartbeatToAllBrokerWithLock(); /* 往Broker发生心跳 */
+                this.mQClientFactory.sendHeartbeatToAllBrokerWithLock();
             }
         } catch (Exception e) {
             throw new MQClientException("subscription exception", e);

@@ -19,9 +19,9 @@ package org.apache.rocketmq.client.impl.consumer;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 public class PullRequest {
-    private String consumerGroup;
-    private MessageQueue messageQueue;
-    private ProcessQueue processQueue;
+    private String consumerGroup;       /* 消费组 */
+    private MessageQueue messageQueue;  /* Topic分区 */
+    private ProcessQueue processQueue;  /* Topic分区拉取到的消息列表 */
     private long nextOffset;
     private boolean previouslyLocked = false;
 

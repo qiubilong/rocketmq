@@ -764,7 +764,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      */
     @Override
     public void subscribe(String topic, String subExpression) throws MQClientException {
-        this.defaultMQPushConsumerImpl.subscribe(withNamespace(topic), subExpression);
+        this.defaultMQPushConsumerImpl.subscribe(withNamespace(topic), subExpression); /* 订阅主题 */
     }
 
     /**

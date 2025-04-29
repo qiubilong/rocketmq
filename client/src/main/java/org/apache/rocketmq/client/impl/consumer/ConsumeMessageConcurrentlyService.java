@@ -53,7 +53,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
     private static final InternalLogger log = ClientLogger.getLog();
     private final DefaultMQPushConsumerImpl defaultMQPushConsumerImpl;
     private final DefaultMQPushConsumer defaultMQPushConsumer;
-    private final MessageListenerConcurrently messageListener; /* 业务 - 消息监听处理器 */
+    private final MessageListenerConcurrently messageListener; /* 业务端 - 消息监听处理器 */
     private final BlockingQueue<Runnable> consumeRequestQueue;
     private final ThreadPoolExecutor consumeExecutor; /* 消费者 - 消费消息任务 - 线程池 */
     private final String consumerGroup;

@@ -29,7 +29,7 @@ import org.apache.rocketmq.common.utils.ThreadUtils;
 
 public class PullMessageService extends ServiceThread { /* 循环拉取服务器消息 - 工作线程 */
     private final InternalLogger log = ClientLogger.getLog();
-    private final LinkedBlockingQueue<PullRequest> pullRequestQueue = new LinkedBlockingQueue<PullRequest>(); /* 消费消息请求队列 */
+    private final LinkedBlockingQueue<PullRequest> pullRequestQueue = new LinkedBlockingQueue<PullRequest>(); /* 拉取消息异步请求队列 */
     private final MQClientInstance mQClientFactory;
     private final ScheduledExecutorService scheduledExecutorService = Executors
         .newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -43,7 +43,7 @@ public class PullMessageService extends ServiceThread { /* 循环拉取服务器
         this.mQClientFactory = mQClientFactory;
     }
 
-    public void executePullRequestLater(final PullRequest pullRequest, final long timeDelay) { /* 添加拉取消息请求通知 */
+    public void executePullRequestLater(final PullRequest pullRequest, final long timeDelay) { /* 添加 - 异步拉取消息请求 */
         if (!isStopped()) {
             this.scheduledExecutorService.schedule(new Runnable() {
                 @Override

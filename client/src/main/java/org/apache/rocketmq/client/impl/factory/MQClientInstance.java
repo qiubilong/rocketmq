@@ -142,9 +142,9 @@ public class MQClientInstance {
 
         this.mQAdminImpl = new MQAdminImpl(this);
 
-        this.pullMessageService = new PullMessageService(this);/* 消费者 - 拉消息 - 工作线程 */
+        this.pullMessageService = new PullMessageService(this);/* ## 消费者 - 异步拉取消息 - 工作线程 */
 
-        this.rebalanceService = new RebalanceService(this);/* 消费者 - 分区消费重平衡 - 工作线程 */
+        this.rebalanceService = new RebalanceService(this);    /* ## 消费者 - 分区消费重平衡 - 工作线程 */
 
         this.defaultMQProducer = new DefaultMQProducer(MixAll.CLIENT_INNER_PRODUCER_GROUP);
         this.defaultMQProducer.resetClientConfig(clientConfig);
@@ -283,7 +283,7 @@ public class MQClientInstance {
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
-            public void run() {/* 每30s 向 Broker发送心跳保活 */
+            public void run() {/* 每30s往 Broker发送心跳保活（消费者端带订阅信息） */
                 try {
                     MQClientInstance.this.cleanOfflineBroker();
                     MQClientInstance.this.sendHeartbeatToAllBrokerWithLock();
@@ -298,7 +298,7 @@ public class MQClientInstance {
             @Override
             public void run() {
                 try {
-                    MQClientInstance.this.persistAllConsumerOffset();
+                    MQClientInstance.this.persistAllConsumerOffset(); /* 每5s更新消费偏移 */
                 } catch (Exception e) {
                     log.error("ScheduledTask persistAllConsumerOffset exception", e);
                 }
@@ -701,12 +701,12 @@ public class MQClientInstance {
         for (Map.Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
             MQConsumerInner impl = entry.getValue();
             if (impl != null) {
-                ConsumerData consumerData = new ConsumerData();
+                ConsumerData consumerData = new ConsumerData(); /* ## 消费端心跳信息 */
                 consumerData.setGroupName(impl.groupName());
                 consumerData.setConsumeType(impl.consumeType());
                 consumerData.setMessageModel(impl.messageModel());
                 consumerData.setConsumeFromWhere(impl.consumeFromWhere());
-                consumerData.getSubscriptionDataSet().addAll(impl.subscriptions());
+                consumerData.getSubscriptionDataSet().addAll(impl.subscriptions());/* ## 订阅版本号 */
                 consumerData.setUnitMode(impl.isUnitMode());
 
                 heartbeatData.getConsumerDataSet().add(consumerData);
@@ -714,7 +714,7 @@ public class MQClientInstance {
         }
 
         // Producer
-        for (Map.Entry<String/* group */, MQProducerInner> entry : this.producerTable.entrySet()) {
+        for (Map.Entry<String/** group */, MQProducerInner> entry : this.producerTable.entrySet()) {
             MQProducerInner impl = entry.getValue();
             if (impl != null) {
                 ProducerData producerData = new ProducerData();
