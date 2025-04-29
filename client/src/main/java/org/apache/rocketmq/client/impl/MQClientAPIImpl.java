@@ -199,7 +199,7 @@ public class MQClientAPIImpl {
         // Inject stream rpc hook first to make reserve field signature
         if (clientConfig.isEnableStreamRequestType()) {
             this.remotingClient.registerRPCHook(new StreamTypeRPCHook());
-        }   /* 2、注册 - 命令处理器 */
+        }   /* 2、注册 - 收到请求命令处理器 */
         this.remotingClient.registerRPCHook(rpcHook);
         this.remotingClient.registerProcessor(RequestCode.CHECK_TRANSACTION_STATE, this.clientRemotingProcessor, null);
 

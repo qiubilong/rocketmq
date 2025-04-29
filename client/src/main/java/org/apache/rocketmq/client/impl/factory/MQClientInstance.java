@@ -94,9 +94,9 @@ public class MQClientInstance {
     private final long bootTimestamp = System.currentTimeMillis();
     private final ConcurrentMap<String/** group */, MQProducerInner> producerTable = new ConcurrentHashMap<String, MQProducerInner>();
     private final ConcurrentMap<String/** group */, MQConsumerInner> consumerTable = new ConcurrentHashMap<String, MQConsumerInner>(); /* 消费者集合 */
-    private final ConcurrentMap<String/* group */, MQAdminExtInner> adminExtTable = new ConcurrentHashMap<String, MQAdminExtInner>();
+    private final ConcurrentMap<String/** group */, MQAdminExtInner> adminExtTable = new ConcurrentHashMap<String, MQAdminExtInner>();
     private final NettyClientConfig nettyClientConfig;
-    private final MQClientAPIImpl mQClientAPIImpl;  /* 创建netty通讯客户端 */
+    private final MQClientAPIImpl mQClientAPIImpl;  /* netty通讯客户端 */
     private final MQAdminImpl mQAdminImpl;
     private final ConcurrentMap<String/** Topic */, TopicRouteData> topicRouteTable = new ConcurrentHashMap<String, TopicRouteData>(); /* Topic路由信息 */
     private final Lock lockNamesrv = new ReentrantLock();
@@ -142,9 +142,9 @@ public class MQClientInstance {
 
         this.mQAdminImpl = new MQAdminImpl(this);
 
-        this.pullMessageService = new PullMessageService(this);/* 消费者 - 拉消息 */
+        this.pullMessageService = new PullMessageService(this);/* 消费者 - 拉消息 - 工作线程 */
 
-        this.rebalanceService = new RebalanceService(this);/* 消费者 - 分区消费重平衡 */
+        this.rebalanceService = new RebalanceService(this);/* 消费者 - 分区消费重平衡 - 工作线程 */
 
         this.defaultMQProducer = new DefaultMQProducer(MixAll.CLIENT_INNER_PRODUCER_GROUP);
         this.defaultMQProducer.resetClientConfig(clientConfig);
@@ -273,7 +273,7 @@ public class MQClientInstance {
             @Override
             public void run() {
                 try {
-                    MQClientInstance.this.updateTopicRouteInfoFromNameServer();
+                    MQClientInstance.this.updateTopicRouteInfoFromNameServer();/* 每30s从注册中心拉取topic信息 */
                 } catch (Exception e) {
                     log.error("ScheduledTask updateTopicRouteInfoFromNameServer exception", e);
                 }
@@ -283,7 +283,7 @@ public class MQClientInstance {
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
-            public void run() {/* 每30s从注册中心 向 Broker发送心跳信息 */
+            public void run() {/* 每30s 向 Broker发送心跳保活 */
                 try {
                     MQClientInstance.this.cleanOfflineBroker();
                     MQClientInstance.this.sendHeartbeatToAllBrokerWithLock();
