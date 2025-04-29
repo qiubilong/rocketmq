@@ -319,7 +319,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                         subscriptionData);
 
                     switch (pullResult.getPullStatus()) {
-                        case FOUND: /* 拉取消息成功*/
+                        case FOUND: /* 拉取分区消息成功*/
                             long prevRequestOffset = pullRequest.getNextOffset();
                             pullRequest.setNextOffset(pullResult.getNextBeginOffset());
                             long pullRT = System.currentTimeMillis() - beginTimestamp;
@@ -334,7 +334,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
                                 DefaultMQPushConsumerImpl.this.getConsumerStatsManager().incPullTPS(pullRequest.getConsumerGroup(),
                                     pullRequest.getMessageQueue().getTopic(), pullResult.getMsgFoundList().size());
-                                /* 1、缓存拉取消息 到缓存队列 */
+                                /* 1、存放拉取分区消息 到缓存队列 */
                                 boolean dispatchToConsume = processQueue.putMessage(pullResult.getMsgFoundList());
                                 DefaultMQPushConsumerImpl.this.consumeMessageService.submitConsumeRequest(/* 2、通知消费者消费消息 */
                                     pullResult.getMsgFoundList(),
@@ -345,7 +345,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                                 if (DefaultMQPushConsumerImpl.this.defaultMQPushConsumer.getPullInterval() > 0) {
                                     DefaultMQPushConsumerImpl.this.executePullRequestLater(pullRequest,
                                         DefaultMQPushConsumerImpl.this.defaultMQPushConsumer.getPullInterval());
-                                } else {      /* 3、继续拉取消息 */
+                                } else {      /* 3、继续拉取分区消息 */
                                     DefaultMQPushConsumerImpl.this.executePullRequestImmediately(pullRequest);
                                 }
                             }
@@ -412,7 +412,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 }
             }
         };
-        /* 设定最新 消费 消息偏移offset */
+        /* ## 指定最新 消费偏移offset */
         boolean commitOffsetEnable = false;
         long commitOffsetValue = 0L;
         if (MessageModel.CLUSTERING == this.defaultMQPushConsumer.getMessageModel()) {
@@ -432,23 +432,23 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
             classFilter = sd.isClassFilterMode();
         }
-         /* 设置消费偏移 */
+
         int sysFlag = PullSysFlag.buildSysFlag(
             commitOffsetEnable, // commitOffset
             true, // suspend
             subExpression != null, // subscription
             classFilter // class filter
         );
-        try {    /* 异步拉取消息 */
+        try {    /* ## 异步拉取消息 */
             this.pullAPIWrapper.pullKernelImpl(
-                pullRequest.getMessageQueue(),
+                pullRequest.getMessageQueue(),      //topic分区
                 subExpression,
                 subscriptionData.getExpressionType(),
-                subscriptionData.getSubVersion(),
-                pullRequest.getNextOffset(),
-                this.defaultMQPushConsumer.getPullBatchSize(),
+                subscriptionData.getSubVersion(),  //订阅版本号
+                pullRequest.getNextOffset(),       //拉取消息的偏移
+                this.defaultMQPushConsumer.getPullBatchSize(),//32
                 sysFlag,
-                commitOffsetValue,
+                commitOffsetValue,                //已经消费的偏移
                 BROKER_SUSPEND_MAX_TIME_MILLIS,
                 CONSUMER_TIMEOUT_MILLIS_WHEN_SUSPEND,
                 CommunicationMode.ASYNC,

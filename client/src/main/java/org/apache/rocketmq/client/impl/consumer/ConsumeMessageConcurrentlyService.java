@@ -348,7 +348,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
     }
 
     class ConsumeRequest implements Runnable {
-        private final List<MessageExt> msgs;
+        private final List<MessageExt> msgs; /* 本次消费消息 */
         private final ProcessQueue processQueue;
         private final MessageQueue messageQueue;
 

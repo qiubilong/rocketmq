@@ -180,16 +180,16 @@ public class PullAPIWrapper {
             }
             /* ## 构建拉取消息报文 */
             PullMessageRequestHeader requestHeader = new PullMessageRequestHeader();
-            requestHeader.setConsumerGroup(this.consumerGroup);/* 消费组 */
-            requestHeader.setTopic(mq.getTopic());            /* 主题 */
-            requestHeader.setQueueId(mq.getQueueId());        /* 分区 */
-            requestHeader.setQueueOffset(offset);             /* 消费偏移 */
-            requestHeader.setMaxMsgNums(maxNums);             /* 默认32个消息 */
+            requestHeader.setConsumerGroup(this.consumerGroup);/* ## 消费组 */
+            requestHeader.setTopic(mq.getTopic());             /* ## 主题 */
+            requestHeader.setQueueId(mq.getQueueId());         /* ## 主题分区 */
+            requestHeader.setQueueOffset(offset);              /* ## 拉取消息偏移 */
+            requestHeader.setMaxMsgNums(maxNums);              /* ## 默认拉取32个消息 */
             requestHeader.setSysFlag(sysFlagInner);
-            requestHeader.setCommitOffset(commitOffset);
+            requestHeader.setCommitOffset(commitOffset);       /* ## 已经消费的偏移 */
             requestHeader.setSuspendTimeoutMillis(brokerSuspendMaxTimeMillis);
             requestHeader.setSubscription(subExpression);
-            requestHeader.setSubVersion(subVersion);         /* 订阅分区版本 --> 解决分区重平衡一致性 */
+            requestHeader.setSubVersion(subVersion);           /* ## 订阅分区版本 --> 解决分区重平衡一致性 */
             requestHeader.setExpressionType(expressionType);
             requestHeader.setBname(mq.getBrokerName());
 

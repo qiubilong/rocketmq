@@ -40,14 +40,14 @@ import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
 /**
  * Queue consumption snapshot
  */
-public class ProcessQueue { /* 消费者 -MessageQueue对应的消息缓存处理队列 */
+public class ProcessQueue { /* 消费者 - MessageQueue对应的消息缓存队列 */
     public final static long REBALANCE_LOCK_MAX_LIVE_TIME =
         Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockMaxLiveTime", "30000"));
     public final static long REBALANCE_LOCK_INTERVAL = Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockInterval", "20000"));
     private final static long PULL_MAX_IDLE_TIME = Long.parseLong(System.getProperty("rocketmq.client.pull.pullMaxIdleTime", "120000"));
     private final InternalLogger log = ClientLogger.getLog();
     private final ReadWriteLock treeMapLock = new ReentrantReadWriteLock();
-    private final TreeMap<Long/**offset*/, MessageExt> msgTreeMap = new TreeMap<Long, MessageExt>(); /* 排序的待消费消息 */
+    private final TreeMap<Long/**offset*/, MessageExt> msgTreeMap = new TreeMap<Long, MessageExt>(); /* offset有序的待消费 消息缓存队列 */
     private final AtomicLong msgCount = new AtomicLong();
     private final AtomicLong msgSize = new AtomicLong();
     private final Lock consumeLock = new ReentrantLock();
@@ -56,7 +56,7 @@ public class ProcessQueue { /* 消费者 -MessageQueue对应的消息缓存处�
      */
     private final TreeMap<Long, MessageExt> consumingMsgOrderlyTreeMap = new TreeMap<Long, MessageExt>();
     private final AtomicLong tryUnlockTimes = new AtomicLong(0);
-    private volatile long queueOffsetMax = 0L;
+    private volatile long queueOffsetMax = 0L; /* 目前拉取消息的最大偏移量 */
     private volatile boolean dropped = false;
     private volatile long lastPullTimestamp = System.currentTimeMillis();
     private volatile long lastConsumeTimestamp = System.currentTimeMillis();
@@ -140,7 +140,7 @@ public class ProcessQueue { /* 消费者 -MessageQueue对应的消息缓存处�
                     MessageExt old = msgTreeMap.put(msg.getQueueOffset(), msg);
                     if (null == old) {
                         validMsgCnt++;
-                        this.queueOffsetMax = msg.getQueueOffset();
+                        this.queueOffsetMax = msg.getQueueOffset(); /* ## 记录拉取消息最大偏移 */
                         msgSize.addAndGet(msg.getBody().length);
                     }
                 }
