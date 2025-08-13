@@ -745,7 +745,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
 }
 
 class BrokerLiveInfo {
-    private long lastUpdateTimestamp;
+    private long lastUpdateTimestamp; /* 最后活跃时间 */
     private DataVersion dataVersion;
     private Channel channel; /* Broker连接通道Channel */
     private String haServerAddr;

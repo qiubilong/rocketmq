@@ -43,7 +43,7 @@ public class NettyDecoder extends LengthFieldBasedFrameDecoder {
             if (null == frame) {
                 return null;
             }
-            return RemotingCommand.decode(frame);
+            return RemotingCommand.decode(frame);/* headSize + headData + bodyData   */
         } catch (Exception e) {
             log.error("decode exception, " + RemotingHelper.parseChannelRemoteAddr(ctx.channel()), e);
             RemotingUtil.closeChannel(ctx.channel());

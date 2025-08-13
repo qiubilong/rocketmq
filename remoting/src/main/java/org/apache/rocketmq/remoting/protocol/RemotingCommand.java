@@ -157,20 +157,20 @@ public class RemotingCommand { /* 通讯请求报文 */
     }
 
     public static RemotingCommand decode(final ByteBuf byteBuffer) throws RemotingCommandException {
-        int length = byteBuffer.readableBytes();
-        int oriHeaderLen = byteBuffer.readInt();
+        int length = byteBuffer.readableBytes();//整个报文总长度
+        int oriHeaderLen = byteBuffer.readInt();//headSize
         int headerLength = getHeaderLength(oriHeaderLen);
         if (headerLength > length - 4) {
             throw new RemotingCommandException("decode error, bad header length: " + headerLength);
         }
 
-        RemotingCommand cmd = headerDecode(byteBuffer, headerLength, getProtocolType(oriHeaderLen)); //报文 - 头部
-
-        int bodyLength = length - 4 - headerLength;              //报文 - 内容
+        RemotingCommand cmd = headerDecode(byteBuffer, headerLength, getProtocolType(oriHeaderLen)); //报文 - 头部内容
+        //  bodyLength = 整个长度 - 头部长度 - 头部内容
+        int bodyLength = length - 4 - headerLength;
         byte[] bodyData = null;
         if (bodyLength > 0) {
             bodyData = new byte[bodyLength];
-            byteBuffer.readBytes(bodyData);
+            byteBuffer.readBytes(bodyData);//报文 - body内容
         }
         cmd.body = bodyData;
 
@@ -178,7 +178,7 @@ public class RemotingCommand { /* 通讯请求报文 */
     }
 
     public static int getHeaderLength(int length) {
-        return length & 0xFFFFFF;
+        return length & 0xFFFFFF; /* 低24位 */
     }
 
     private static RemotingCommand headerDecode(ByteBuf byteBuffer, int len, SerializeType type) throws RemotingCommandException {
@@ -441,10 +441,10 @@ public class RemotingCommand { /* 通讯请求报文 */
             this.makeCustomHeaderToNet();
             byte[] header = RemotingSerializable.encode(this);
             headerSize = header.length;
-            out.writeBytes(header);
+            out.writeBytes(header);/* 头部内容 */
         }
-        out.setInt(beginIndex, 4 + headerSize + bodySize);/* 报文总大小 = 报文大小 + 头部大小 + 内容大小  */
-        out.setInt(beginIndex + 4, markProtocolType(headerSize, serializeTypeCurrentRPC));
+        out.setInt(beginIndex, 4 + headerSize + bodySize);/* 报文总大小 = header大小 + header内容大小 + body内容大小  */
+        out.setInt(beginIndex + 4, markProtocolType(headerSize, serializeTypeCurrentRPC));/* 低24位存储头部大小 */
     }
 
     public ByteBuffer encodeHeader() {

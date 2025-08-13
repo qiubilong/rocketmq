@@ -67,8 +67,8 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 public class NettyRemotingServer extends NettyRemotingAbstract implements RemotingServer {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
     private final ServerBootstrap serverBootstrap;
-    private final EventLoopGroup eventLoopGroupSelector;       /* 处理Channel读写 - 线程组（1） */
-    private final EventLoopGroup eventLoopGroupBoss;           /* 处理Accept连接 - 线程组 */
+    private final EventLoopGroup eventLoopGroupSelector;       /* 处理Channel读写 - 线程组 (3) */
+    private final EventLoopGroup eventLoopGroupBoss;           /* 处理Accept连接 - 线程组 (1)*/
     private final NettyServerConfig nettyServerConfig;
 
     private final ExecutorService publicExecutor;
@@ -87,8 +87,8 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     // sharable handlers
     private HandshakeHandler handshakeHandler;
     private NettyEncoder encoder;//NettyEncoder
-    private NettyConnectManageHandler connectionManageHandler;
-    private NettyServerHandler serverHandler; // NettyServerHandler
+    private NettyConnectManageHandler connectionManageHandler;/*  处理 Channel 事件  */
+    private NettyServerHandler serverHandler; /*  处理 Channel io 读写  */
 
     public NettyRemotingServer(final NettyServerConfig nettyServerConfig) {
         this(nettyServerConfig, null);
@@ -358,8 +358,8 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private void prepareSharableHandlers() {
         handshakeHandler = new HandshakeHandler(TlsSystemConfig.tlsMode);
         encoder = new NettyEncoder();
-        connectionManageHandler = new NettyConnectManageHandler();
-        serverHandler = new NettyServerHandler();
+        connectionManageHandler = new NettyConnectManageHandler(); /* 分发 Channel 事件 */
+        serverHandler = new NettyServerHandler();/* Channel io 读写 */
     }
 
     @ChannelHandler.Sharable
