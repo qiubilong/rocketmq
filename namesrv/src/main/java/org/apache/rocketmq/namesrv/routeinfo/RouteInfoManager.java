@@ -172,8 +172,8 @@ public class RouteInfoManager {/* Topic路由注册中心 */
                     }
                 }
 
-                String oldAddr = brokerData.getBrokerAddrs().put(brokerId, brokerAddr);
-                if (MixAll.MASTER_ID == brokerId) {
+                String oldAddr = brokerData.getBrokerAddrs().put(brokerId, brokerAddr);  /* brokerId <--> 服务地址，  brokerId=0 表示master */
+                if (MixAll.MASTER_ID == brokerId) {//主节点
                     log.info("cluster [{}] brokerName [{}] master address change from {} to {}",
                             brokerData.getCluster(), brokerData.getBrokerName(), oldAddr, brokerAddr);
                 }
@@ -181,7 +181,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
                 registerFirst = registerFirst || (null == oldAddr);
 
                 if (null != topicConfigWrapper
-                        && MixAll.MASTER_ID == brokerId) {
+                        && MixAll.MASTER_ID == brokerId) {//主节点
                     if (this.isBrokerTopicConfigChanged(brokerAddr, topicConfigWrapper.getDataVersion())
                             || registerFirst) {
                         ConcurrentMap<String, TopicConfig> tcTable =
