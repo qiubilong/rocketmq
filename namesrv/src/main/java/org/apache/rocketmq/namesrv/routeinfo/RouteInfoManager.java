@@ -134,7 +134,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
 
         return topicList;
     }
-
+    /* 注册 topic 路由信息 */
     public RegisterBrokerResult registerBroker(
             final String clusterName,
             final String brokerAddr,
@@ -157,7 +157,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
                 BrokerData brokerData = this.brokerAddrTable.get(brokerName);
                 if (null == brokerData) {
                     registerFirst = true;
-                    brokerData = new BrokerData(clusterName, brokerName, new HashMap<>()); /* Broker信息 */
+                    brokerData = new BrokerData(clusterName, brokerName, new HashMap<>()); /* 注册 Broker信息 */
                     this.brokerAddrTable.put(brokerName, brokerData);
                 }
                 Map<Long, String> brokerAddrsMap = brokerData.getBrokerAddrs();
@@ -188,7 +188,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
                                 topicConfigWrapper.getTopicConfigTable();
                         if (tcTable != null) {
                             for (Map.Entry<String, TopicConfig> entry : tcTable.entrySet()) {
-                                this.createAndUpdateQueueData(brokerName, entry.getValue()); /* 注册Topic信息 */
+                                this.createAndUpdateQueueData(brokerName, entry.getValue()); /* 注册 Topic信息 */
                             }
                         }
                     }
@@ -405,7 +405,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
 
         noBrokerRegisterTopic.forEach(topicQueueTable::remove);
     }
-
+    /* 查找topic 路由信息 */
     public TopicRouteData pickupTopicRouteData(final String topic) {
         TopicRouteData topicRouteData = new TopicRouteData();
         boolean foundQueueData = false;
@@ -422,17 +422,17 @@ public class RouteInfoManager {/* Topic路由注册中心 */
                 this.lock.readLock().lockInterruptibly();
                 Map<String, QueueData> queueDataMap = this.topicQueueTable.get(topic);
                 if (queueDataMap != null) {
-                    topicRouteData.setQueueDatas(new ArrayList<>(queueDataMap.values()));
+                    topicRouteData.setQueueDatas(new ArrayList<>(queueDataMap.values()));/* topic - 消息队列 列表 */
                     foundQueueData = true;
 
-                    brokerNameSet.addAll(queueDataMap.keySet());
+                    brokerNameSet.addAll(queueDataMap.keySet()); /* topic - broker列表 */
 
                     for (String brokerName : brokerNameSet) {
                         BrokerData brokerData = this.brokerAddrTable.get(brokerName);
                         if (null != brokerData) {
                             BrokerData brokerDataClone = new BrokerData(brokerData.getCluster(), brokerData.getBrokerName(), (HashMap<Long, String>) brokerData
                                     .getBrokerAddrs().clone());
-                            brokerDataList.add(brokerDataClone);
+                            brokerDataList.add(brokerDataClone);/* topic - broker列表 - 地址 */
                             foundBrokerData = true;
 
                             // skip if filter server table is empty

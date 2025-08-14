@@ -19,10 +19,10 @@
  * $Id: QueueData.java 1835 2013-05-16 02:00:50Z vintagewang@apache.org $
  */
 package org.apache.rocketmq.common.protocol.route;
-
+/* topic 消息队列 */
 public class QueueData implements Comparable<QueueData> {
     private String brokerName;
-    private int readQueueNums;
+    private int readQueueNums; /* 队列数量 */
     private int writeQueueNums;
     private int perm;
     private int topicSysFlag;

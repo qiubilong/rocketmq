@@ -211,8 +211,8 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                             .addLast(defaultEventExecutorGroup, HANDSHAKE_HANDLER_NAME, handshakeHandler)
                             .addLast(defaultEventExecutorGroup,
                                 encoder,
-                                new NettyDecoder(),          /* 空闲检测 120s */
-                                new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()),
+                                new NettyDecoder(),
+                                new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()),  /* 空闲检测 120s */
                                 connectionManageHandler,    /* 维护在线可用的Broker */
                                 serverHandler               /* 处理客户端请求 */
                             );
@@ -424,7 +424,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             ctx.fireChannelRead(msg.retain());
         }
     }
-
+    /* 通道Channel - IO读写 - 处理 */
     @ChannelHandler.Sharable
     class NettyServerHandler extends SimpleChannelInboundHandler<RemotingCommand> {
 
@@ -433,7 +433,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             processMessageReceived(ctx, msg); /* 处理客户端请求 */
         }
     }
-
+    /* 通道Channel - 连接 - 处理 */
     @ChannelHandler.Sharable
     class NettyConnectManageHandler extends ChannelDuplexHandler {
         @Override
