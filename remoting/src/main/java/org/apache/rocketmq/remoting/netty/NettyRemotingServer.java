@@ -72,7 +72,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private final NettyServerConfig nettyServerConfig;
 
     private final ExecutorService publicExecutor;
-    private final ChannelEventListener channelEventListener;  /* 客户端Channel失活回调 - BrokerHousekeepingService */
+    private final ChannelEventListener channelEventListener;  /* 客户端Channel变化回调 - BrokerHousekeepingService */
 
     private final Timer timer = new Timer("ServerHouseKeepingService", true);
     private DefaultEventExecutorGroup defaultEventExecutorGroup;//业务线程池
@@ -116,7 +116,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         });
 
         if (useEpoll()) {
-            this.eventLoopGroupBoss = new EpollEventLoopGroup(1, new ThreadFactory() {
+            this.eventLoopGroupBoss = new EpollEventLoopGroup(1, new ThreadFactory() {   /* 处理客户端 - 连接 */
                 private AtomicInteger threadIndex = new AtomicInteger(0);
 
                 @Override
@@ -125,7 +125,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                 }
             });
 
-            this.eventLoopGroupSelector = new EpollEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactory() {
+            this.eventLoopGroupSelector = new EpollEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactory() {/* 处理客户端 - 读写io */
                 private AtomicInteger threadIndex = new AtomicInteger(0);
                 private int threadTotal = nettyServerConfig.getServerSelectorThreads();
 
@@ -179,10 +179,10 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             && nettyServerConfig.isUseEpollNativeSelector()
             && Epoll.isAvailable();
     }
-
+    /* 启动Netty服务端，监听客户端连接 */
     @Override
-    public void start() {  /* 启动Netty服务端，监听客户端连接 */
-        this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(
+    public void start() {
+        this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(//业务线程池
             nettyServerConfig.getServerWorkerThreads(),
             new ThreadFactory() {
 

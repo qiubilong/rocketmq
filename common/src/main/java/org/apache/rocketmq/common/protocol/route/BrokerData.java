@@ -24,7 +24,7 @@ import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MixAll;
-
+ /* brokerName 名字相同的 多台机器集群*/
 public class BrokerData implements Comparable<BrokerData> {
     private String cluster;
     private String brokerName;
