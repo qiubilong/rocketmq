@@ -157,7 +157,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
                 BrokerData brokerData = this.brokerAddrTable.get(brokerName);
                 if (null == brokerData) {
                     registerFirst = true;
-                    brokerData = new BrokerData(clusterName, brokerName, new HashMap<>()); /* 注册 Broker信息 */
+                    brokerData = new BrokerData(clusterName, brokerName, new HashMap<>()); /* Broker信息  - 名字相同多台机器 */
                     this.brokerAddrTable.put(brokerName, brokerData);
                 }
                 Map<Long, String> brokerAddrsMap = brokerData.getBrokerAddrs();

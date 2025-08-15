@@ -138,7 +138,7 @@ public class BrokerStartup {
                 System.exit(-2);
             }
 
-            String namesrvAddr = brokerConfig.getNamesrvAddr(); //注册中心地址
+            String namesrvAddr = brokerConfig.getNamesrvAddr(); /* 注册中心地址 */
             if (null != namesrvAddr) {
                 try {
                     String[] addrArray = namesrvAddr.split(";");
