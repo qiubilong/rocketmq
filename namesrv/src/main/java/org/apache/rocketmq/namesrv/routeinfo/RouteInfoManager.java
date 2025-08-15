@@ -432,7 +432,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
                         if (null != brokerData) {
                             BrokerData brokerDataClone = new BrokerData(brokerData.getCluster(), brokerData.getBrokerName(), (HashMap<Long, String>) brokerData
                                     .getBrokerAddrs().clone());
-                            brokerDataList.add(brokerDataClone);/* topic - broker列表 - 地址 */
+                            brokerDataList.add(brokerDataClone);/* topic - broker地址列表 */
                             foundBrokerData = true;
 
                             // skip if filter server table is empty

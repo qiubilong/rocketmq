@@ -37,7 +37,7 @@ public class MessageClientIDSetter {
         } catch (Exception e) {
             ip = createFakeIP();
         }
-        LEN = ip.length + 2 + 4 + 4 + 2;
+        LEN = ip.length + 2 + 4 + 4 + 2;    /* ip地址 + 进程号 + MessageClientIDSetter.hashCode() + 时间偏移 + 计数器 */
         ByteBuffer tempBuffer = ByteBuffer.allocate(ip.length + 2 + 4);
         tempBuffer.put(ip);
         tempBuffer.putShort((short) UtilAll.getPid());
@@ -55,9 +55,9 @@ public class MessageClientIDSetter {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
-        startTime = cal.getTimeInMillis();
+        startTime = cal.getTimeInMillis(); /* 当月1号零点 */
         cal.add(Calendar.MONTH, 1);
-        nextStartTime = cal.getTimeInMillis();
+        nextStartTime = cal.getTimeInMillis(); /* 下个月1号零点 */
     }
 
     public static Date getNearlyTimeFromID(String msgID) {
@@ -115,7 +115,7 @@ public class MessageClientIDSetter {
         char[] sb = new char[LEN * 2];
         System.arraycopy(FIX_STRING, 0, sb, 0, FIX_STRING.length);
         long current = System.currentTimeMillis();
-        if (current >= nextStartTime) {
+        if (current >= nextStartTime) { /* 下个月 */
             setStartTime(current);
         }
         int diff = (int)(current - startTime);
@@ -129,10 +129,10 @@ public class MessageClientIDSetter {
         UtilAll.writeShort(sb, pos, COUNTER.getAndIncrement());
         return new String(sb);
     }
-
+    /* ip地址 + 进程号 + MessageClientIDSetter.hashCode() + 时间偏移 + 计数器 */
     public static void setUniqID(final Message msg) {
         if (msg.getProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX) == null) {
-            msg.putProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, createUniqID());
+            msg.putProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, createUniqID());/* UNIQ_KEY */
         }
     }
 

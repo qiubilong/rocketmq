@@ -179,7 +179,7 @@ public class MQClientInstance {
             for (QueueData qd : qds) {
                 if (PermName.isWriteable(qd.getPerm())) {
                     BrokerData brokerData = null;
-                    for (BrokerData bd : route.getBrokerDatas()) {
+                    for (BrokerData bd : route.getBrokerDatas()) { /* 找到 topic所在broker */
                         if (bd.getBrokerName().equals(qd.getBrokerName())) {
                             brokerData = bd;
                             break;
@@ -190,11 +190,11 @@ public class MQClientInstance {
                         continue;
                     }
 
-                    if (!brokerData.getBrokerAddrs().containsKey(MixAll.MASTER_ID)) {
+                    if (!brokerData.getBrokerAddrs().containsKey(MixAll.MASTER_ID)) {/* 找到 topic所在broker 必须存在主节点 */
                         continue;
                     }
 
-                    for (int i = 0; i < qd.getWriteQueueNums(); i++) {
+                    for (int i = 0; i < qd.getWriteQueueNums(); i++) { /* 创建topic - 消息队列  */
                         MessageQueue mq = new MessageQueue(topic, qd.getBrokerName(), i);
                         info.getMessageQueueList().add(mq);
                     }
@@ -640,7 +640,7 @@ public class MQClientInstance {
 
                             // Update Pub info
                             if (!producerTable.isEmpty()) {
-                                TopicPublishInfo publishInfo = topicRouteData2TopicPublishInfo(topic, topicRouteData);
+                                TopicPublishInfo publishInfo = topicRouteData2TopicPublishInfo(topic, topicRouteData);//topic全部消息队列
                                 publishInfo.setHaveTopicRouterInfo(true);
                                 Iterator<Entry<String, MQProducerInner>> it = this.producerTable.entrySet().iterator();
                                 while (it.hasNext()) {
@@ -971,11 +971,11 @@ public class MQClientInstance {
     public MQConsumerInner selectConsumer(final String group) {
         return this.consumerTable.get(group);
     }
-
+    /* 生产者 获取 broker地址 */
     public String findBrokerAddressInPublish(final String brokerName) {
-        HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
+        HashMap<Long/** brokerId */, String/** address */> map = this.brokerAddrTable.get(brokerName);
         if (map != null && !map.isEmpty()) {
-            return map.get(MixAll.MASTER_ID);
+            return map.get(MixAll.MASTER_ID); /* broker主节点 */
         }
 
         return null;

@@ -691,7 +691,7 @@ public class CommitLog {
                 return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.CREATE_MAPEDFILE_FAILED, null));
             }
 
-            result = mappedFile.appendMessage(msg, this.appendMessageCallback, putMessageContext);/* 顺序写入消息 */
+            result = mappedFile.appendMessage(msg, this.appendMessageCallback, putMessageContext);/* 消息顺序写入内存映射文件  - mappedByteBuffer */
             switch (result.getStatus()) {
                 case PUT_OK:
                     break;
@@ -865,9 +865,9 @@ public class CommitLog {
             final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
             if (messageExt.isWaitStoreMsgOK()) {
                 GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes(),
-                        this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
-                flushDiskWatcher.add(request);
-                service.putRequest(request);
+                        this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());//5s
+                flushDiskWatcher.add(request);/* 刷盘超时检查 */
+                service.putRequest(request); /* 同步刷盘 - GroupCommitService */
                 return request.future();
             } else {
                 service.wakeup();
@@ -877,7 +877,7 @@ public class CommitLog {
         // Asynchronous flush
         else {
             if (!this.defaultMessageStore.getMessageStoreConfig().isTransientStorePoolEnable()) {
-                flushCommitLogService.wakeup();/*  异步刷盘 */
+                flushCommitLogService.wakeup();/*  异步刷盘 - FlushRealTimeService */
             } else  {
                 commitLogService.wakeup();
             }
@@ -1071,7 +1071,7 @@ public class CommitLog {
                     if (end - begin > 500) {
                         log.info("Commit data to file costs {} ms", end - begin);
                     }
-                    this.waitForRunning(interval);
+                    this.waitForRunning(interval);//200ms
                 } catch (Throwable e) {
                     CommitLog.log.error(this.getServiceName() + " service has exception. ", e);
                 }
@@ -1167,7 +1167,7 @@ public class CommitLog {
         }
     }
 
-    public static class GroupCommitRequest {
+    public static class GroupCommitRequest { /* 同步刷盘请求 */
         private final long nextOffset;
         private CompletableFuture<PutMessageStatus> flushOKFuture = new CompletableFuture<>();
         private final long deadLine;
@@ -1199,7 +1199,7 @@ public class CommitLog {
      * GroupCommit Service - （10ms）同步刷盘
      */
     class GroupCommitService extends FlushCommitLogService {
-        private volatile LinkedList<GroupCommitRequest> requestsWrite = new LinkedList<GroupCommitRequest>();
+        private volatile LinkedList<GroupCommitRequest> requestsWrite = new LinkedList<GroupCommitRequest>(); /* 刷盘请求异步队列 */
         private volatile LinkedList<GroupCommitRequest> requestsRead = new LinkedList<GroupCommitRequest>();
         private final PutMessageSpinLock lock = new PutMessageSpinLock();
 
@@ -1213,7 +1213,7 @@ public class CommitLog {
             this.wakeup();
         }
 
-        private void swapRequests() {
+        private void swapRequests() {/* onWaitEnd() 休眠结束时调用 */
             lock.lock();
             try {
                 LinkedList<GroupCommitRequest> tmp = this.requestsWrite;
@@ -1235,7 +1235,7 @@ public class CommitLog {
                         flushOK = CommitLog.this.mappedFileQueue.getFlushedWhere() >= req.getNextOffset();
                     }
 
-                    req.wakeupCustomer(flushOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_DISK_TIMEOUT);
+                    req.wakeupCustomer(flushOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_DISK_TIMEOUT);/* 刷盘结果 */
                 }
 
                 long storeTimestamp = CommitLog.this.mappedFileQueue.getStoreTimestamp();
@@ -1317,9 +1317,9 @@ public class CommitLog {
                 int sysflag = msgInner.getSysFlag();
                 int msgIdLen = (sysflag & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0 ? 4 + 4 + 8 : 16 + 4 + 8;
                 ByteBuffer msgIdBuffer = ByteBuffer.allocate(msgIdLen);
-                MessageExt.socketAddress2ByteBuffer(msgInner.getStoreHost(), msgIdBuffer);
+                MessageExt.socketAddress2ByteBuffer(msgInner.getStoreHost(), msgIdBuffer);//ip地址
                 msgIdBuffer.clear();//because socketAddress2ByteBuffer flip the buffer
-                msgIdBuffer.putLong(msgIdLen - 8, wroteOffset);
+                msgIdBuffer.putLong(msgIdLen - 8, wroteOffset);//物理偏移
                 return UtilAll.bytes2string(msgIdBuffer.array());
             };
 
@@ -1355,7 +1355,7 @@ public class CommitLog {
             final int msgLen = preEncodeBuffer.getInt(0);
 
             // Determines whether there is sufficient free space
-            if ((msgLen + END_FILE_MIN_BLANK_LENGTH) > maxBlank) {
+            if ((msgLen + END_FILE_MIN_BLANK_LENGTH) > maxBlank) { /* maxBlank == 剩余空间 */
                 this.msgStoreItemMemory.clear();
                 // 1 TOTALSIZE
                 this.msgStoreItemMemory.putInt(maxBlank);
@@ -1386,7 +1386,7 @@ public class CommitLog {
 
             final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
             // Write messages to the queue buffer
-            byteBuffer.put(preEncodeBuffer);
+            byteBuffer.put(preEncodeBuffer); /* 存储消息写入 writeBuffer */
             msgInner.setEncodedBuff(null);
             AppendMessageResult result = new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, msgLen, msgIdSupplier,
                 msgInner.getStoreTimestamp(), queueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills);

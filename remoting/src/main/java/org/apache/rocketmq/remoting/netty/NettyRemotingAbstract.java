@@ -207,7 +207,7 @@ public abstract class NettyRemotingAbstract {
                                 doAfterRpcHooks(remoteAddr, cmd, response);
                                 if (!cmd.isOnewayRPC()) {
                                     if (response != null) {
-                                        response.setOpaque(opaque);
+                                        response.setOpaque(opaque);/* 关联请求ID */
                                         response.markResponseType();//标记为响应报文
                                         response.setSerializeTypeCurrentRPC(cmd.getSerializeTypeCurrentRPC());
                                         try {

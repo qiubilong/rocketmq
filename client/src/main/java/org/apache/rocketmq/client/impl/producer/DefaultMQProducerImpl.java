@@ -551,7 +551,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             boolean callTimeout = false;
             MessageQueue mq = null;
             Exception exception = null;
-            SendResult sendResult = null;
+            SendResult sendResult = null;                                                              //2
             int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed() : 1;
             int times = 0;
             String[] brokersSent = new String[timesTotal];
@@ -583,7 +583,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                                 return null;
                             case SYNC:
                                 if (sendResult.getSendStatus() != SendStatus.SEND_OK) {
-                                    if (this.defaultMQProducer.isRetryAnotherBrokerWhenNotStoreOK()) {/* 如果开始了重试，继续重试（默认false） */
+                                    if (this.defaultMQProducer.isRetryAnotherBrokerWhenNotStoreOK()) { //false
                                         continue;
                                     }
                                 }
@@ -1235,10 +1235,10 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         Validators.checkMessage(msg, this.defaultMQProducer);
 
         SendResult sendResult = null;
-        MessageAccessor.putProperty(msg, MessageConst.PROPERTY_TRANSACTION_PREPARED, "true");
+        MessageAccessor.putProperty(msg, MessageConst.PROPERTY_TRANSACTION_PREPARED, "true");/* 标记事务消息 */
         MessageAccessor.putProperty(msg, MessageConst.PROPERTY_PRODUCER_GROUP, this.defaultMQProducer.getProducerGroup());
         try {
-            sendResult = this.send(msg);
+            sendResult = this.send(msg); /* 1、发送半事务消息 */
         } catch (Exception e) {
             throw new MQClientException("send message Exception", e);
         }
@@ -1259,7 +1259,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         localTransactionState = localTransactionExecuter.executeLocalTransactionBranch(msg, arg);
                     } else if (transactionListener != null) {
                         log.debug("Used new transaction API");
-                        localTransactionState = transactionListener.executeLocalTransaction(msg, arg);
+                        localTransactionState = transactionListener.executeLocalTransaction(msg, arg); /* 2、发送半事务消息成功，执行本地事务 */
                     }
                     if (null == localTransactionState) {
                         localTransactionState = LocalTransactionState.UNKNOW;
@@ -1286,7 +1286,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
 
         try {
-            this.endTransaction(msg, sendResult, localTransactionState, localException);
+            this.endTransaction(msg, sendResult, localTransactionState, localException); /* 3、确认半事务的状态 */
         } catch (Exception e) {
             log.warn("local transaction execute " + localTransactionState + ", but end broker transaction failed", e);
         }

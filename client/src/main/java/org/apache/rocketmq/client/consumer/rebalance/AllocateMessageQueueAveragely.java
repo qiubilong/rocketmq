@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
  * Average Hashing queue algorithm
  */
 public class AllocateMessageQueueAveragely extends AbstractAllocateMessageQueueStrategy {
-
+     /* 平局分配 消息队列 */
     @Override
     public List<MessageQueue> allocate(String consumerGroup, String currentCID, List<MessageQueue> mqAll,
         List<String> cidAll) {

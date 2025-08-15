@@ -320,7 +320,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
                         "the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1()
                                 + "] sending transaction message is forbidden");
                 return CompletableFuture.completedFuture(response);
-            }
+            }                                        /* 处理事务消息 */
             putMessageResult = this.brokerController.getTransactionalMessageService().asyncPrepareMessage(msgInner);
         } else {
             putMessageResult = this.brokerController.getMessageStore().asyncPutMessage(msgInner);/* 存储消息 - DefaultMessageStore - CommitLog中存储消息   */
@@ -693,7 +693,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
                                     SendMessageRequestHeader requestHeader) {
         final RemotingCommand response = RemotingCommand.createResponseCommand(SendMessageResponseHeader.class);
 
-        response.setOpaque(request.getOpaque());/* 客户端异步请求唯一标识 */
+        response.setOpaque(request.getOpaque());/* 关联请求唯一id */
 
         response.addExtField(MessageConst.PROPERTY_MSG_REGION, this.brokerController.getBrokerConfig().getRegionId());
         response.addExtField(MessageConst.PROPERTY_TRACE_SWITCH, String.valueOf(this.brokerController.getBrokerConfig().isTraceOn()));

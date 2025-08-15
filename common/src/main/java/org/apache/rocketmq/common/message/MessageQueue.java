@@ -17,12 +17,12 @@
 package org.apache.rocketmq.common.message;
 
 import java.io.Serializable;
-
+/* topic - 分区队列 */
 public class MessageQueue implements Comparable<MessageQueue>, Serializable {
     private static final long serialVersionUID = 6191200464116433425L;
     private String topic;
     private String brokerName;
-    private int queueId;
+    private int queueId; //broker中 分区编号
 
     public MessageQueue() {
 

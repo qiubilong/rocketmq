@@ -38,7 +38,7 @@ import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-public class RemotingCommand { /* 通讯请求报文 */
+public class RemotingCommand { /* 通讯报文 */
     public static final String SERIALIZE_TYPE_PROPERTY = "rocketmq.serialize.type";
     public static final String SERIALIZE_TYPE_ENV = "ROCKETMQ_SERIALIZE_TYPE";
     public static final String REMOTING_VERSION_KEY = "rocketmq.remoting.version";
@@ -76,11 +76,11 @@ public class RemotingCommand { /* 通讯请求报文 */
         }
     }
 
-    private int code;              /* 请求命令 */
+    private int code;              /* 请求命令   //响应报文用不到 */
     private LanguageCode language = LanguageCode.JAVA;
     private int version = 0;
-    private int opaque = requestId.getAndIncrement();
-    private int flag = 0;
+    private int opaque = requestId.getAndIncrement();  /* 请求ID */
+    private int flag = 0; /* 标记 -- 区分 请求、响应 */
     private String remark;
     private HashMap<String, String> extFields;
     private transient CommandCustomHeader customHeader;

@@ -50,20 +50,20 @@ public class MappedFile extends ReferenceResource {
     private static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
 
     private static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
-    protected final AtomicInteger wrotePosition = new AtomicInteger(0);
-    protected final AtomicInteger committedPosition = new AtomicInteger(0);
-    private final AtomicInteger flushedPosition = new AtomicInteger(0);
+    protected final AtomicInteger wrotePosition = new AtomicInteger(0);     /* 最新写缓存位置 */
+    protected final AtomicInteger committedPosition = new AtomicInteger(0); /* 上次写入位置 */
+    private final AtomicInteger flushedPosition = new AtomicInteger(0); /* 刷盘位置 */
     protected int fileSize;
-    protected FileChannel fileChannel;
+    protected FileChannel fileChannel; /* 内存映射文件 */
     /**
      * Message will put to here first, and then reput to FileChannel if writeBuffer is not null.
      */
-    protected ByteBuffer writeBuffer = null;
+    protected ByteBuffer writeBuffer = null; /* 存储消息 - 写缓冲区 */
     protected TransientStorePool transientStorePool = null;
     private String fileName;
     private long fileFromOffset;
     private File file;
-    private MappedByteBuffer mappedByteBuffer;
+    private MappedByteBuffer mappedByteBuffer;/* 内存映射文件 - 缓冲区 */
     private volatile long storeTimestamp = 0;
     private boolean firstCreateInQueue = false;
 
@@ -217,11 +217,11 @@ public class MappedFile extends ReferenceResource {
         int currentPos = this.wrotePosition.get();
 
         if (currentPos < this.fileSize) {
-            ByteBuffer byteBuffer = writeBuffer != null ? writeBuffer.slice() : this.mappedByteBuffer.slice();
+            ByteBuffer byteBuffer = writeBuffer != null ? writeBuffer.slice() : this.mappedByteBuffer.slice();//返回视图
             byteBuffer.position(currentPos);
             AppendMessageResult result;
             if (messageExt instanceof MessageExtBrokerInner) {
-                result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
+                result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos, /* 顺序写入 mappedByteBuffer */
                         (MessageExtBrokerInner) messageExt, putMessageContext);
             } else if (messageExt instanceof MessageExtBatch) {
                 result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
@@ -229,7 +229,7 @@ public class MappedFile extends ReferenceResource {
             } else {
                 return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
             }
-            this.wrotePosition.addAndGet(result.getWroteBytes());
+            this.wrotePosition.addAndGet(result.getWroteBytes());/* 最新写缓存位置 */
             this.storeTimestamp = result.getStoreTimestamp();
             return result;
         }
@@ -296,7 +296,7 @@ public class MappedFile extends ReferenceResource {
                     if (writeBuffer != null || this.fileChannel.position() != 0) {
                         this.fileChannel.force(false);
                     } else {
-                        this.mappedByteBuffer.force();
+                        this.mappedByteBuffer.force();/* 文件刷盘 */
                     }
                 } catch (Throwable e) {
                     log.error("Error occurred when force data to disk.", e);
@@ -309,7 +309,7 @@ public class MappedFile extends ReferenceResource {
                 this.flushedPosition.set(getReadPosition());
             }
         }
-        return this.getFlushedPosition();
+        return this.getFlushedPosition();/* 最新刷盘位置 */
     }
 
     public int commit(final int commitLeastPages) {
@@ -319,7 +319,7 @@ public class MappedFile extends ReferenceResource {
         }
         if (this.isAbleToCommit(commitLeastPages)) {
             if (this.hold()) {
-                commit0();
+                commit0(); /* commit写缓冲区 */
                 this.release();
             } else {
                 log.warn("in commit, hold failed, commit offset = " + this.committedPosition.get());
@@ -344,7 +344,7 @@ public class MappedFile extends ReferenceResource {
                 ByteBuffer byteBuffer = writeBuffer.slice();
                 byteBuffer.position(lastCommittedPosition);
                 byteBuffer.limit(writePos);
-                this.fileChannel.position(lastCommittedPosition);
+                this.fileChannel.position(lastCommittedPosition); /* 消息缓冲区，写入内存映射commitLog文件 */
                 this.fileChannel.write(byteBuffer);
                 this.committedPosition.set(writePos);
             } catch (Throwable e) {

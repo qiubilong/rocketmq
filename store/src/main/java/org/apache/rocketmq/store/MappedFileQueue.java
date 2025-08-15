@@ -44,7 +44,7 @@ public class MappedFileQueue {
 
     private final AllocateMappedFileService allocateMappedFileService;
 
-    protected long flushedWhere = 0;
+    protected long flushedWhere = 0; /* 刷盘位置h */
     private long committedWhere = 0;
 
     private volatile long storeTimestamp = 0;
@@ -441,10 +441,10 @@ public class MappedFileQueue {
         MappedFile mappedFile = this.findMappedFileByOffset(this.flushedWhere, this.flushedWhere == 0);
         if (mappedFile != null) {
             long tmpTimeStamp = mappedFile.getStoreTimestamp();
-            int offset = mappedFile.flush(flushLeastPages);
+            int offset = mappedFile.flush(flushLeastPages);/* 文件刷盘 */
             long where = mappedFile.getFileFromOffset() + offset;
             result = where == this.flushedWhere;
-            this.flushedWhere = where;
+            this.flushedWhere = where;//更新刷盘位置
             if (0 == flushLeastPages) {
                 this.storeTimestamp = tmpTimeStamp;
             }
@@ -457,7 +457,7 @@ public class MappedFileQueue {
         boolean result = true;
         MappedFile mappedFile = this.findMappedFileByOffset(this.committedWhere, this.committedWhere == 0);
         if (mappedFile != null) {
-            int offset = mappedFile.commit(commitLeastPages);
+            int offset = mappedFile.commit(commitLeastPages); /* commit写缓冲区 */
             long where = mappedFile.getFileFromOffset() + offset;
             result = where == this.committedWhere;
             this.committedWhere = where;
