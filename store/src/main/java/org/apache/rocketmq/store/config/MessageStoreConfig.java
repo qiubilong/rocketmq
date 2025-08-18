@@ -655,7 +655,7 @@ public class MessageStoreConfig {
      *
      * @return <tt>true</tt> or <tt>false</tt>
      */
-    public boolean isTransientStorePoolEnable() {
+    public boolean isTransientStorePoolEnable() {/* 默认false -- 不开启堆外内存 */
         return transientStorePoolEnable && FlushDiskType.ASYNC_FLUSH == getFlushDiskType()
             && BrokerRole.SLAVE != getBrokerRole();
     }

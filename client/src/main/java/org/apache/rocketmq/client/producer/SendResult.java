@@ -21,11 +21,11 @@ import org.apache.rocketmq.common.message.MessageQueue;
 /* 消息发送结果 */
 public class SendResult {
     private SendStatus sendStatus; /* 状态 */
-    private String msgId;          /* 消息id  */
+    private String msgId;          /* 客户端 - 消息id  */
     private MessageQueue messageQueue;
     private long queueOffset;
     private String transactionId;
-    private String offsetMsgId;
+    private String offsetMsgId; /* 服务端 - 消息id */
     private String regionId;
     private boolean traceOn = true;
 

@@ -60,7 +60,7 @@ import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
-
+/* 存储消息 - 处理器 */
 public class SendMessageProcessor extends AbstractSendMessageProcessor {
 
     private List<ConsumeMessageHook> consumeMessageHookList;
@@ -102,7 +102,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
                 if (requestHeader.isBatch()) {
                     return this.asyncSendBatchMessage(ctx, request, mqtraceContext, requestHeader);
                 } else {
-                    return this.asyncSendMessage(ctx, request, mqtraceContext, requestHeader); /*  存储消息 到 CommitLog */
+                    return this.asyncSendMessage(ctx, request, mqtraceContext, requestHeader); /*  存储单个消息 到 CommitLog */
                 }
         }
     }
@@ -262,11 +262,11 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
         });
     }
 
-    /*  存储消息 到 CommitLog */
+    /*  存储单个消息 到 CommitLog */
     private CompletableFuture<RemotingCommand> asyncSendMessage(ChannelHandlerContext ctx, RemotingCommand request,
                                                                 SendMessageContext mqtraceContext,
                                                                 SendMessageRequestHeader requestHeader) {
-        final RemotingCommand response = preSend(ctx, request, requestHeader);
+        final RemotingCommand response = preSend(ctx, request, requestHeader);/* 检查topic、队列 有效性 */
         final SendMessageResponseHeader responseHeader = (SendMessageResponseHeader)response.readCustomHeader();
 
         if (response.getCode() != -1) {
@@ -324,7 +324,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
             putMessageResult = this.brokerController.getTransactionalMessageService().asyncPrepareMessage(msgInner);
         } else {
             putMessageResult = this.brokerController.getMessageStore().asyncPutMessage(msgInner);/* 存储消息 - DefaultMessageStore - CommitLog中存储消息   */
-        }
+        }        /* 返回存储结果 */
         return handlePutMessageResultFuture(putMessageResult, response, request, msgInner, responseHeader, mqtraceContext, ctx, queueIdInt);
     }
 
@@ -474,7 +474,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
         boolean sendOK = false;
 
         switch (putMessageResult.getPutMessageStatus()) {
-            // Success
+            // Success --  这种情况不会重试投递消息
             case PUT_OK:
                 sendOK = true;
                 response.setCode(ResponseCode.SUCCESS); /* ## 消息写入成功 */
@@ -492,7 +492,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
                 sendOK = true;
                 break;
 
-            // Failed
+            // Failed -- 以下情况会重试投递消息
             case CREATE_MAPEDFILE_FAILED:
                 response.setCode(ResponseCode.SYSTEM_ERROR);
                 response.setRemark("create mapped file failed, server is busy or broken.");
@@ -709,7 +709,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
         }
 
         response.setCode(-1);
-        super.msgCheck(ctx, requestHeader, response);
+        super.msgCheck(ctx, requestHeader, response);/* 检查topic、队列 有效性 */
 
         return response;
     }

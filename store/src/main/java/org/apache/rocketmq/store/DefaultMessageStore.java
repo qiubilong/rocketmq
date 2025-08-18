@@ -143,7 +143,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         this.consumeQueueTable = new ConcurrentHashMap<>(32);
 
         this.flushConsumeQueueService = new FlushConsumeQueueService();/* 消费offset索引刷盘 - 工作线程 */
-        this.cleanCommitLogService = new CleanCommitLogService();//删除过期文件
+        this.cleanCommitLogService = new CleanCommitLogService();/* 删除过期文件 */
         this.cleanConsumeQueueService = new CleanConsumeQueueService();
         this.storeStatsService = new StoreStatsService();
         this.indexService = new IndexService(this);
@@ -194,22 +194,22 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         boolean result = true;
 
         try {
-            boolean lastExitOK = !this.isTempFileExist();
+            boolean lastExitOK = !this.isTempFileExist(); /* abort文件存在 --> 说明非正常关闭 */
             log.info("last shutdown {}", lastExitOK ? "normally" : "abnormally");
 
             // load Commit Log
-            result = result && this.commitLog.load();
+            result = result && this.commitLog.load();/* 加载 commitlog 下文件 */
 
             // load Consume Queue
-            result = result && this.loadConsumeQueue();
+            result = result && this.loadConsumeQueue();/* 加载 consumeQueue下文件 */
 
             if (result) {
                 this.storeCheckpoint =
                     new StoreCheckpoint(StorePathConfigHelper.getStoreCheckpoint(this.messageStoreConfig.getStorePathRootDir()));
 
-                this.indexService.load(lastExitOK);
+                this.indexService.load(lastExitOK); /* 加载索引文件 */
 
-                this.recover(lastExitOK);
+                this.recover(lastExitOK); /* 恢复数据 */
 
                 log.info("load over, and the max phy offset = {}", this.getMaxPhyOffset());
 
@@ -252,7 +252,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
             long maxPhysicalPosInLogicQueue = commitLog.getMinOffset();
             for (ConcurrentMap<Integer, ConsumeQueue> maps : this.consumeQueueTable.values()) {
                 for (ConsumeQueue logic : maps.values()) {
-                    if (logic.getMaxPhysicOffset() > maxPhysicalPosInLogicQueue) {
+                    if (logic.getMaxPhysicOffset() > maxPhysicalPosInLogicQueue) { /* 恢复上次 - 重构消息偏移 */
                         maxPhysicalPosInLogicQueue = logic.getMaxPhysicOffset();
                     }
                 }
@@ -446,7 +446,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
 
     @Override
     public CompletableFuture<PutMessageResult> asyncPutMessage(MessageExtBrokerInner msg) {
-        PutMessageStatus checkStoreStatus = this.checkStoreStatus();
+        PutMessageStatus checkStoreStatus = this.checkStoreStatus();/* 关机/从节点写 */
         if (checkStoreStatus != PutMessageStatus.PUT_OK) {
             return CompletableFuture.completedFuture(new PutMessageResult(checkStoreStatus, null));
         }
@@ -1384,20 +1384,20 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         return file.exists();
     }
 
-    private boolean loadConsumeQueue() {
+    private boolean loadConsumeQueue() {     /* C:\myGit\rocketmq\data\consumequeue */
         File dirLogic = new File(StorePathConfigHelper.getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()));
         File[] fileTopicList = dirLogic.listFiles();
         if (fileTopicList != null) {
 
             for (File fileTopic : fileTopicList) {
-                String topic = fileTopic.getName();
+                String topic = fileTopic.getName(); /* 主题 */
 
-                File[] fileQueueIdList = fileTopic.listFiles();
+                File[] fileQueueIdList = fileTopic.listFiles();/* 主题 - 消息队列 */
                 if (fileQueueIdList != null) {
                     for (File fileQueueId : fileQueueIdList) {
                         int queueId;
                         try {
-                            queueId = Integer.parseInt(fileQueueId.getName());
+                            queueId = Integer.parseInt(fileQueueId.getName());/* 文件名就是消息队列id  */
                         } catch (NumberFormatException e) {
                             continue;
                         }
@@ -1422,12 +1422,12 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
     }
 
     private void recover(final boolean lastExitOK) {
-        long maxPhyOffsetOfConsumeQueue = this.recoverConsumeQueue();
+        long maxPhyOffsetOfConsumeQueue = this.recoverConsumeQueue(); /* 消费队列 - 最大偏移 */
 
         if (lastExitOK) {
-            this.commitLog.recoverNormally(maxPhyOffsetOfConsumeQueue);
+            this.commitLog.recoverNormally(maxPhyOffsetOfConsumeQueue);   /* 程序正常退出 - 恢复刷盘位置 */
         } else {
-            this.commitLog.recoverAbnormally(maxPhyOffsetOfConsumeQueue);
+            this.commitLog.recoverAbnormally(maxPhyOffsetOfConsumeQueue); /* 程序异常退出 - 恢复刷盘位置 */
         }
 
         this.recoverTopicQueueTable();
@@ -1455,7 +1455,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         }
     }
 
-    private long recoverConsumeQueue() {
+    private long recoverConsumeQueue() { /* 消费队列 - 最大偏移 */
         long maxPhysicOffset = -1;
         for (ConcurrentMap<Integer, ConsumeQueue> maps : this.consumeQueueTable.values()) {
             for (ConsumeQueue logic : maps.values()) {

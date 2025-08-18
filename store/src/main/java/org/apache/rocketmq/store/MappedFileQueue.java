@@ -36,15 +36,15 @@ public class MappedFileQueue {
 
     private static final int DELETE_FILES_BATCH_MAX = 10;
 
-    private final String storePath;
+    private final String storePath; /* commitlog时 - 存储目录 - C:\myGit\rocketmq\data\commitlog */
 
-    protected final int mappedFileSize;
+    protected final int mappedFileSize; /* commitlog时 -1G */
 
-    protected final CopyOnWriteArrayList<MappedFile> mappedFiles = new CopyOnWriteArrayList<MappedFile>();
+    protected final CopyOnWriteArrayList<MappedFile> mappedFiles = new CopyOnWriteArrayList<MappedFile>(); /* commitlog时 -commitlog目录下 - 多个文件 */
 
     private final AllocateMappedFileService allocateMappedFileService;
 
-    protected long flushedWhere = 0; /* 刷盘位置h */
+    protected long flushedWhere = 0; /* 刷盘位置 */
     private long committedWhere = 0;
 
     private volatile long storeTimestamp = 0;
@@ -150,14 +150,14 @@ public class MappedFileQueue {
         File dir = new File(this.storePath);
         File[] ls = dir.listFiles();
         if (ls != null) {
-            return doLoad(Arrays.asList(ls));
+            return doLoad(Arrays.asList(ls)); /* 加载 commitlog目录下 - 多个文件 */
         }
         return true;
     }
 
     public boolean doLoad(List<File> files) {
         // ascending order
-        files.sort(Comparator.comparing(File::getName));
+        files.sort(Comparator.comparing(File::getName)); /* 升序 */
 
         for (File file : files) {
             if (file.length() != this.mappedFileSize) {

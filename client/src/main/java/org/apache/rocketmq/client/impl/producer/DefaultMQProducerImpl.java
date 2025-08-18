@@ -541,7 +541,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         final long timeout
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         this.makeSureStateOK();
-        Validators.checkMessage(msg, this.defaultMQProducer);
+        Validators.checkMessage(msg, this.defaultMQProducer);/* 0、校验消息 */
         final long invokeID = random.nextLong();
         long beginTimestampFirst = System.currentTimeMillis();
         long beginTimestampPrev = beginTimestampFirst;
@@ -582,7 +582,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             case ONEWAY:
                                 return null;
                             case SYNC:
-                                if (sendResult.getSendStatus() != SendStatus.SEND_OK) {
+                                if (sendResult.getSendStatus() != SendStatus.SEND_OK) {/* 非 SEND_OK 状态 也已经写入broker内存 */
                                     if (this.defaultMQProducer.isRetryAnotherBrokerWhenNotStoreOK()) { //false
                                         continue;
                                     }
@@ -592,7 +592,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             default:
                                 break;
                         }
-                    } catch (RemotingException e) {
+                    } catch (RemotingException e) {//发送超时，进行重试
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true);
                         log.warn(String.format("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq), e);
@@ -612,7 +612,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         log.warn(String.format("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq), e);
                         log.warn(msg.toString());
                         exception = e;
-                        if (this.defaultMQProducer.getRetryResponseCodes().contains(e.getResponseCode())) {
+                        if (this.defaultMQProducer.getRetryResponseCodes().contains(e.getResponseCode())) { /* broker内部异常重试 */
                             continue;
                         } else {
                             if (sendResult != null) {
@@ -1306,7 +1306,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
      */
     public SendResult send(
         Message msg) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
-        return send(msg, this.defaultMQProducer.getSendMsgTimeout());/* 发送消息*/
+        return send(msg, this.defaultMQProducer.getSendMsgTimeout());/* 发送消息 - 3s超时 */
     }
 
     public void endTransaction(

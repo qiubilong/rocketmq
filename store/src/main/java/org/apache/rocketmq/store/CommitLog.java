@@ -206,7 +206,7 @@ public class CommitLog {
 
     /**
      * When the normal exit, data recovery, all memory data have been flush
-     */
+     */   /* 程序正常退出 - 恢复数据 */
     public void recoverNormally(long maxPhyOffsetOfConsumeQueue) {
         boolean checkCRCOnRecover = this.defaultMessageStore.getMessageStoreConfig().isCheckCRCOnRecover();
         final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
@@ -220,17 +220,17 @@ public class CommitLog {
             ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
             long processOffset = mappedFile.getFileFromOffset();
             long mappedFileOffset = 0;
-            while (true) {
+            while (true) {                        /* 一条一条地解析消息 */
                 DispatchRequest dispatchRequest = this.checkMessageAndReturnSize(byteBuffer, checkCRCOnRecover);
                 int size = dispatchRequest.getMsgSize();
                 // Normal data
                 if (dispatchRequest.isSuccess() && size > 0) {
-                    mappedFileOffset += size;
+                    mappedFileOffset += size; /* 累计消息存储偏移 */
                 }
                 // Come the end of the file, switch to the next file Since the
                 // return 0 representatives met last hole,
                 // this can not be included in truncate offset
-                else if (dispatchRequest.isSuccess() && size == 0) {
+                else if (dispatchRequest.isSuccess() && size == 0) { /* 上个文件读取完毕，切换下个文件 */
                     index++;
                     if (index >= mappedFiles.size()) {
                         // Current branch can not happen
@@ -252,7 +252,7 @@ public class CommitLog {
             }
 
             processOffset += mappedFileOffset;
-            this.mappedFileQueue.setFlushedWhere(processOffset);
+            this.mappedFileQueue.setFlushedWhere(processOffset);/* 更新消息刷盘位置 */
             this.mappedFileQueue.setCommittedWhere(processOffset);
             this.mappedFileQueue.truncateDirtyFiles(processOffset);
 
@@ -284,7 +284,7 @@ public class CommitLog {
      * check the message and returns the message size
      *
      * @return 0 Come the end of the file // >0 Normal messages // -1 Message checksum failure
-     */
+     */  /* 尝试解析一条消息 */
     public DispatchRequest checkMessageAndReturnSize(java.nio.ByteBuffer byteBuffer, final boolean checkCRC,
         final boolean readBody) {
         try {
@@ -297,7 +297,7 @@ public class CommitLog {
                 case MESSAGE_MAGIC_CODE:
                     break;
                 case BLANK_MAGIC_CODE:
-                    return new DispatchRequest(0, true /* success */);
+                    return new DispatchRequest(0, true /* success */); /* 0=文件结束 */
                 default:
                     log.warn("found a illegal magic code 0x" + Integer.toHexString(magicCode));
                     return new DispatchRequest(-1, false /* success */);
@@ -474,7 +474,7 @@ public class CommitLog {
             MappedFile mappedFile = null;
             for (; index >= 0; index--) {
                 mappedFile = mappedFiles.get(index);
-                if (this.isMappedFileMatchedRecover(mappedFile)) {
+                if (this.isMappedFileMatchedRecover(mappedFile)) {/* 从最后一个文件开始，逆序寻找最后写入点文件 */
                     log.info("recover from this mapped file " + mappedFile.getFileName());
                     break;
                 }
@@ -488,7 +488,7 @@ public class CommitLog {
             ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
             long processOffset = mappedFile.getFileFromOffset();
             long mappedFileOffset = 0;
-            while (true) {
+            while (true) {                        /* 一条一条地解析消息 */
                 DispatchRequest dispatchRequest = this.checkMessageAndReturnSize(byteBuffer, checkCRCOnRecover);
                 int size = dispatchRequest.getMsgSize();
 
@@ -502,7 +502,7 @@ public class CommitLog {
                                 this.defaultMessageStore.doDispatch(dispatchRequest);
                             }
                         } else {
-                            this.defaultMessageStore.doDispatch(dispatchRequest);
+                            this.defaultMessageStore.doDispatch(dispatchRequest); /* 重新消息的 消费索引 和 数据索引 */
                         }
                     }
                     // Come the end of the file, switch to the next file
@@ -530,14 +530,14 @@ public class CommitLog {
             }
 
             processOffset += mappedFileOffset;
-            this.mappedFileQueue.setFlushedWhere(processOffset);
+            this.mappedFileQueue.setFlushedWhere(processOffset); /* 更新最新刷盘位置 */
             this.mappedFileQueue.setCommittedWhere(processOffset);
             this.mappedFileQueue.truncateDirtyFiles(processOffset);
 
             // Clear ConsumeQueue redundant data
             if (maxPhyOffsetOfConsumeQueue >= processOffset) {
                 log.warn("maxPhyOffsetOfConsumeQueue({}) >= processOffset({}), truncate dirty logic files", maxPhyOffsetOfConsumeQueue, processOffset);
-                this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
+                this.defaultMessageStore.truncateDirtyLogicFiles(processOffset); /* 消费队列最大偏移 > commitlog最大偏移，则截断消息队列 */
             }
         }
         // Commitlog case files are deleted
@@ -613,7 +613,7 @@ public class CommitLog {
             putMessageThreadLocal.getEncoder().updateEncoderBufferCapacity(newMaxMessageSize);
         }
     }
-    /* 存储消息 */
+    /* 存储单个消息 */
     public CompletableFuture<PutMessageResult> asyncPutMessage(final MessageExtBrokerInner msg) {
         // Set the storage time
         msg.setStoreTimestamp(System.currentTimeMillis());

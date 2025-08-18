@@ -36,10 +36,10 @@ public class MessageExt extends Message {
     private long queueOffset;    /* 消息分区偏移量 */
     private int sysFlag;
     private long bornTimestamp;
-    private SocketAddress bornHost;
+    private SocketAddress bornHost;//生产者信息
 
     private long storeTimestamp;
-    private SocketAddress storeHost;
+    private SocketAddress storeHost;//存储者信息
     private String msgId;         /* 消息ID */
     private long commitLogOffset; /* 消息偏移量 */
     private int bodyCRC;

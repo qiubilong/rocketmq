@@ -28,7 +28,7 @@ import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
-
+/* 消息队列 */
 public class ConsumeQueue {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -38,8 +38,8 @@ public class ConsumeQueue {
     private final DefaultMessageStore defaultMessageStore;
 
     private final MappedFileQueue mappedFileQueue;
-    private final String topic;
-    private final int queueId;
+    private final String topic; /* 消息队列 - 所属主题 */
+    private final int queueId;  /* 消息队列id */
     private final ByteBuffer byteBufferIndex;
 
     private final String storePath;

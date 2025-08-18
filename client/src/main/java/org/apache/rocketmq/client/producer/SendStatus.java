@@ -18,7 +18,7 @@ package org.apache.rocketmq.client.producer;
 
 public enum SendStatus {
     SEND_OK,
-    FLUSH_DISK_TIMEOUT,
+    FLUSH_DISK_TIMEOUT,/* 非 SEND_OK 时，消息已经存储到内存，重试导致消息重复 */
     FLUSH_SLAVE_TIMEOUT,
     SLAVE_NOT_AVAILABLE,
 }

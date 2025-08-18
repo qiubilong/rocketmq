@@ -267,7 +267,7 @@ public class BrokerController {
             }
         }
 
-        result = result && this.messageStore.load();
+        result = result && this.messageStore.load(); /* 加载（恢复）数据 */
 
         if (result) {             /* 2、创建Broker Netty 服务器 10911 */
             this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.clientHousekeepingService);
