@@ -77,7 +77,7 @@ public class ClientConfig {
         sb.append(this.getClientIP());
 
         sb.append("@");
-        sb.append(this.getInstanceName());
+        sb.append(this.getInstanceName());/* UtilAll.getPid() + "#" + System.nanoTime(); */
         if (!UtilAll.isBlank(this.unitName)) {
             sb.append("@");
             sb.append(this.unitName);

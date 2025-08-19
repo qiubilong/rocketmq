@@ -30,30 +30,30 @@ public interface MQProducer extends MQAdmin {
     void start() throws MQClientException;
 
     void shutdown();
-
+    /* 获取主题 - 消息队列 */
     List<MessageQueue> fetchPublishMessageQueues(final String topic) throws MQClientException;
-
+    /* 发送消息 - 同步 */
     SendResult send(final Message msg) throws MQClientException, RemotingException, MQBrokerException,
         InterruptedException;
 
     SendResult send(final Message msg, final long timeout) throws MQClientException,
         RemotingException, MQBrokerException, InterruptedException;
-
+    /* 发送消息 - 异步 */
     void send(final Message msg, final SendCallback sendCallback) throws MQClientException,
         RemotingException, InterruptedException;
 
     void send(final Message msg, final SendCallback sendCallback, final long timeout)
         throws MQClientException, RemotingException, InterruptedException;
-
+    /* 发送消息 - 单向 */
     void sendOneway(final Message msg) throws MQClientException, RemotingException,
         InterruptedException;
-
+    /* 发送消息 - 同步 - 指定消息队列 */
     SendResult send(final Message msg, final MessageQueue mq) throws MQClientException,
         RemotingException, MQBrokerException, InterruptedException;
 
     SendResult send(final Message msg, final MessageQueue mq, final long timeout)
         throws MQClientException, RemotingException, MQBrokerException, InterruptedException;
-
+    /* 发送消息 - 异步 - 指定消息队列 */
     void send(final Message msg, final MessageQueue mq, final SendCallback sendCallback)
         throws MQClientException, RemotingException, InterruptedException;
 
@@ -62,7 +62,7 @@ public interface MQProducer extends MQAdmin {
 
     void sendOneway(final Message msg, final MessageQueue mq) throws MQClientException,
         RemotingException, InterruptedException;
-
+    /* 发送消息 - 同步 - 消息队列选择器 */
     SendResult send(final Message msg, final MessageQueueSelector selector, final Object arg)
         throws MQClientException, RemotingException, MQBrokerException, InterruptedException;
 
@@ -83,11 +83,11 @@ public interface MQProducer extends MQAdmin {
 
     TransactionSendResult sendMessageInTransaction(final Message msg,
         final LocalTransactionExecuter tranExecuter, final Object arg) throws MQClientException;
-
+    /* 发送消息 - 同步 - 事务消息 */
     TransactionSendResult sendMessageInTransaction(final Message msg,
         final Object arg) throws MQClientException;
 
-    //for batch
+    /* 发送消息 - 批量 */
     SendResult send(final Collection<Message> msgs) throws MQClientException, RemotingException, MQBrokerException,
         InterruptedException;
 

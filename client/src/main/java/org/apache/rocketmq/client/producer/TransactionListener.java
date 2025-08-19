@@ -19,7 +19,7 @@ package org.apache.rocketmq.client.producer;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
 
-public interface TransactionListener {
+public interface TransactionListener { /* 事务消息 - 确认 - 处理器 */
     /**
      * When send transactional prepare(half) message succeed, this method will be invoked to execute local transaction.
      *

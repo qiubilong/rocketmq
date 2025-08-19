@@ -107,9 +107,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     private final BlockingQueue<Runnable> asyncSenderThreadPoolQueue;
     private final ExecutorService defaultAsyncSenderExecutor;
     protected BlockingQueue<Runnable> checkRequestQueue;
-    protected ExecutorService checkExecutor;
+    protected ExecutorService checkExecutor; /* 事务消息 - 确认线程池 */
     private ServiceState serviceState = ServiceState.CREATE_JUST;
-    private MQClientInstance mQClientFactory;
+    private MQClientInstance mQClientFactory; /* 对外通讯实例 */
     private ArrayList<CheckForbiddenHook> checkForbiddenHookList = new ArrayList<CheckForbiddenHook>();
     private MQFaultStrategy mqFaultStrategy = new MQFaultStrategy();
     private ExecutorService asyncSenderExecutor;
@@ -206,7 +206,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         null);
                 }
 
-                this.topicPublishInfoTable.put(this.defaultMQProducer.getCreateTopicKey(), new TopicPublishInfo());
+                this.topicPublishInfoTable.put(this.defaultMQProducer.getCreateTopicKey(), new TopicPublishInfo());//默认 TBW102
 
                 if (startFactory) {
                     mQClientFactory.start(); /* ## 启动工作线程和定时器，拉取topic路由信息 */
@@ -320,7 +320,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     Throwable exception = null;
                     try {
                         if (transactionCheckListener != null) {
-                            localTransactionState = transactionCheckListener.checkLocalTransactionState(message);
+                            localTransactionState = transactionCheckListener.checkLocalTransactionState(message); /* 半数事务消息回查 */
                         } else if (transactionListener != null) {
                             log.debug("Used new check API in transaction message");
                             localTransactionState = transactionListener.checkLocalTransaction(message);
@@ -389,7 +389,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             }
         };
 
-        this.checkExecutor.submit(request);
+        this.checkExecutor.submit(request);/* 半数事务消息回查 - 异步执行 */
     }
 
     @Override
@@ -541,7 +541,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         final long timeout
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         this.makeSureStateOK();
-        Validators.checkMessage(msg, this.defaultMQProducer);/* 0、校验消息 */
+        Validators.checkMessage(msg, this.defaultMQProducer);/* 0、校验消息 - body不能超过4M */
         final long invokeID = random.nextLong();
         long beginTimestampFirst = System.currentTimeMillis();
         long beginTimestampPrev = beginTimestampFirst;
@@ -707,7 +707,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             try {
                 //for MessageBatch,ID has been set in the generating process
                 if (!(msg instanceof MessageBatch)) {
-                    MessageClientIDSetter.setUniqID(msg);
+                    MessageClientIDSetter.setUniqID(msg);/* 检查设置消息客户端id */
                 }
 
                 boolean topicWithNamespace = false;
@@ -1327,13 +1327,13 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         requestHeader.setCommitLogOffset(id.getOffset());
         requestHeader.setBname(sendResult.getMessageQueue().getBrokerName());
         switch (localTransactionState) {
-            case COMMIT_MESSAGE:
+            case COMMIT_MESSAGE:   /* 事务消息 - 提交 */
                 requestHeader.setCommitOrRollback(MessageSysFlag.TRANSACTION_COMMIT_TYPE);
                 break;
-            case ROLLBACK_MESSAGE:
+            case ROLLBACK_MESSAGE: /* 事务消息 - 回滚 */
                 requestHeader.setCommitOrRollback(MessageSysFlag.TRANSACTION_ROLLBACK_TYPE);
                 break;
-            case UNKNOW:
+            case UNKNOW:          /* 事务消息 - 需要再次确认 */
                 requestHeader.setCommitOrRollback(MessageSysFlag.TRANSACTION_NOT_TYPE);
                 break;
             default:

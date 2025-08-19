@@ -68,7 +68,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     private final Set<Integer> retryResponseCodes = new CopyOnWriteArraySet<Integer>(Arrays.asList(
             ResponseCode.TOPIC_NOT_EXIST,
             ResponseCode.SERVICE_NOT_AVAILABLE,
-            ResponseCode.SYSTEM_ERROR,/* CREATE_MAPEDFILE_FAILED/OS_PAGECACHE_BUSY/UNKNOWN_ERROR */
+            ResponseCode.SYSTEM_ERROR,/* CREATE_MAPEDFILE_FAILED / OS_PAGECACHE_BUSY / UNKNOWN_ERROR */
             ResponseCode.NO_PERMISSION,
             ResponseCode.NO_BUYER_ID,
             ResponseCode.NOT_IN_CURRENT_UNIT
@@ -126,7 +126,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     /**
      * Maximum allowed message body size in bytes.
      */
-    private int maxMessageSize = 1024 * 1024 * 4; // 4M
+    private int maxMessageSize = 1024 * 1024 * 4; /* 消息大小4M */
 
     /**
      * Interface of asynchronous transfer data

@@ -21,7 +21,7 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.protocol.NamespaceUtil;
 import org.apache.rocketmq.remoting.RPCHook;
-
+/* 事务消息 - 生产者 */
 public class TransactionMQProducer extends DefaultMQProducer {
     private TransactionCheckListener transactionCheckListener;
     private int checkThreadPoolMinSize = 1;
@@ -30,7 +30,7 @@ public class TransactionMQProducer extends DefaultMQProducer {
 
     private ExecutorService executorService;
 
-    private TransactionListener transactionListener;
+    private TransactionListener transactionListener; /* 事务消息回调 */
 
     public TransactionMQProducer() {
     }
@@ -57,7 +57,7 @@ public class TransactionMQProducer extends DefaultMQProducer {
 
     @Override
     public void start() throws MQClientException {
-        this.defaultMQProducerImpl.initTransactionEnv();
+        this.defaultMQProducerImpl.initTransactionEnv();/* 检查设置 - 事务消息 - 确认异步线程池 */
         super.start();
     }
 
@@ -91,7 +91,7 @@ public class TransactionMQProducer extends DefaultMQProducer {
         }
 
         msg.setTopic(NamespaceUtil.wrapNamespace(this.getNamespace(), msg.getTopic()));
-        return this.defaultMQProducerImpl.sendMessageInTransaction(msg, null, arg);
+        return this.defaultMQProducerImpl.sendMessageInTransaction(msg, null, arg); /* 发送事务消息 */
     }
 
     public TransactionCheckListener getTransactionCheckListener() {

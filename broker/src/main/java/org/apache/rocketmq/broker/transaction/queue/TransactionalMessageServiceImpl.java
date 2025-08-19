@@ -62,7 +62,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
 
     @Override
     public CompletableFuture<PutMessageResult> asyncPrepareMessage(MessageExtBrokerInner messageInner) {
-        return transactionalMessageBridge.asyncPutHalfMessage(messageInner);
+        return transactionalMessageBridge.asyncPutHalfMessage(messageInner); /* 存储 - 半事务消息 */
     }
 
     @Override
@@ -127,7 +127,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
     public void check(long transactionTimeout, int transactionCheckMax,
         AbstractTransactionalMessageCheckListener listener) {
         try {
-            String topic = TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC;
+            String topic = TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC;/* 半事务消息topic = RMQ_SYS_TRANS_HALF_TOPIC */
             Set<MessageQueue> msgQueues = transactionalMessageBridge.fetchMessageQueues(topic);
             if (msgQueues == null || msgQueues.size() == 0) {
                 log.warn("The queue of topic is empty :" + topic);
@@ -186,7 +186,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                                 continue;
                             }
                         }
-
+                        /* 超过检查次数则丢弃 transactionCheckMax=15 */
                         if (needDiscard(msgExt, transactionCheckMax) || needSkip(msgExt)) {
                             listener.resolveDiscardMsg(msgExt);
                             newOffset = i + 1;
@@ -198,7 +198,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                                 new Date(msgExt.getStoreTimestamp()));
                             break;
                         }
-
+                        /* 半事务消息回查时间 */
                         long valueOfCurrentMinusBorn = System.currentTimeMillis() - msgExt.getBornTimestamp();
                         long checkImmunityTime = transactionTimeout;
                         String checkImmunityTimeStr = msgExt.getUserProperty(MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS);
@@ -227,7 +227,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                             if (!putBackHalfMsgQueue(msgExt, i)) {
                                 continue;
                             }
-                            listener.resolveHalfMsg(msgExt);
+                            listener.resolveHalfMsg(msgExt);/* 回查事务状态 */
                         } else {
                             pullResult = fillOpRemoveMap(removeMap, opQueue, pullResult.getNextBeginOffset(), halfOffset, doneOpOffset);
                             log.debug("The miss offset:{} in messageQueue:{} need to get more opMsg, result is:{}", i,

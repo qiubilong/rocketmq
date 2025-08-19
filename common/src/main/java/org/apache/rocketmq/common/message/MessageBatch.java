@@ -39,13 +39,13 @@ public class MessageBatch extends Message implements Iterable<Message> {
         return messages.iterator();
     }
 
-    public static MessageBatch generateFromList(Collection<Message> messages) {
+    public static MessageBatch generateFromList(Collection<Message> messages) { /* 封装批量消息 */
         assert messages != null;
         assert messages.size() > 0;
         List<Message> messageList = new ArrayList<Message>(messages.size());
         Message first = null;
         for (Message message : messages) {
-            if (message.getDelayTimeLevel() > 0) {
+            if (message.getDelayTimeLevel() > 0) { /* 不能是 延迟消息 */
                 throw new UnsupportedOperationException("TimeDelayLevel is not supported for batching");
             }
             if (message.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {

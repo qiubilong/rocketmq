@@ -184,7 +184,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                         new NettyDecoder(),
                         new IdleStateHandler(0, 0, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()),//120s
                         new NettyConnectManageHandler(),/* 连接管理处理器 */
-                        new NettyClientHandler());
+                        new NettyClientHandler());/* 客户端业务处理器 */
                 }
             });
         if (nettyClientConfig.getClientSocketSndBufSize() > 0) {

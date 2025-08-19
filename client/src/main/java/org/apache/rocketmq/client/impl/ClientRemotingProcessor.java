@@ -71,7 +71,7 @@ public class ClientRemotingProcessor extends AsyncNettyRequestProcessor implemen
         RemotingCommand request) throws RemotingCommandException {
         switch (request.getCode()) {
             case RequestCode.CHECK_TRANSACTION_STATE:
-                return this.checkTransactionState(ctx, request);
+                return this.checkTransactionState(ctx, request); /* 半事务消息回查 */
             case RequestCode.NOTIFY_CONSUMER_IDS_CHANGED:
                 return this.notifyConsumerIdsChanged(ctx, request);
             case RequestCode.RESET_CONSUMER_CLIENT_OFFSET:
@@ -118,7 +118,7 @@ public class ClientRemotingProcessor extends AsyncNettyRequestProcessor implemen
                 MQProducerInner producer = this.mqClientFactory.selectProducer(group);
                 if (producer != null) {
                     final String addr = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
-                    producer.checkTransactionState(addr, messageExt, requestHeader);
+                    producer.checkTransactionState(addr, messageExt, requestHeader);/* 半事务消息回查 */
                 } else {
                     log.debug("checkTransactionState, pick producer by group[{}] failed", group);
                 }

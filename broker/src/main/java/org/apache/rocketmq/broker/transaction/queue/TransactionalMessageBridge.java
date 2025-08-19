@@ -206,7 +206,7 @@ public class TransactionalMessageBridge {
             String.valueOf(msgInner.getQueueId()));
         msgInner.setSysFlag(
             MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(), MessageSysFlag.TRANSACTION_NOT_TYPE));
-        msgInner.setTopic(TransactionalMessageUtil.buildHalfTopic());
+        msgInner.setTopic(TransactionalMessageUtil.buildHalfTopic()); /* 转存 RMQ_SYS_TRANS_HALF_TOPIC 主题 */
         msgInner.setQueueId(0);
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
         return msgInner;

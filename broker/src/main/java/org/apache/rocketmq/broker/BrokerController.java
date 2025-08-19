@@ -477,7 +477,7 @@ public class BrokerController {
                     log.warn("FileWatchService created error, can't load the certificate dynamically");
                 }
             }
-            initialTransaction();
+            initialTransaction(); /* 处理事务消息 */
             initialAcl();
             initialRpcHooks();
         }
@@ -496,7 +496,7 @@ public class BrokerController {
             log.warn("Load default discard message hook service: {}", DefaultTransactionalMessageCheckListener.class.getSimpleName());
         }
         this.transactionalMessageCheckListener.setBrokerController(this);
-        this.transactionalMessageCheckService = new TransactionalMessageCheckService(this);
+        this.transactionalMessageCheckService = new TransactionalMessageCheckService(this); /* 事务消息确认 - 工作线程 */
     }
 
     private void initialAcl() {
