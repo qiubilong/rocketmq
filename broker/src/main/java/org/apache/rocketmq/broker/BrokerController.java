@@ -477,7 +477,7 @@ public class BrokerController {
                     log.warn("FileWatchService created error, can't load the certificate dynamically");
                 }
             }
-            initialTransaction(); /* 处理事务消息 */
+            initialTransaction(); /* 半事务消息回查 */
             initialAcl();
             initialRpcHooks();
         }
@@ -496,7 +496,7 @@ public class BrokerController {
             log.warn("Load default discard message hook service: {}", DefaultTransactionalMessageCheckListener.class.getSimpleName());
         }
         this.transactionalMessageCheckListener.setBrokerController(this);
-        this.transactionalMessageCheckService = new TransactionalMessageCheckService(this); /* 事务消息确认 - 工作线程 */
+        this.transactionalMessageCheckService = new TransactionalMessageCheckService(this); /* 半事务消息回查 - 工作线程 */
     }
 
     private void initialAcl() {
@@ -608,8 +608,8 @@ public class BrokerController {
         this.fastRemotingServer.registerProcessor(RequestCode.UPDATE_CONSUMER_OFFSET, consumerManageProcessor, this.consumerManageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.QUERY_CONSUMER_OFFSET, consumerManageProcessor, this.consumerManageExecutor);
 
-        /**
-         * EndTransactionProcessor
+        /*
+         * 生产端 - 半事务消息确认
          */
         this.remotingServer.registerProcessor(RequestCode.END_TRANSACTION, new EndTransactionProcessor(this), this.endTransactionExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.END_TRANSACTION, new EndTransactionProcessor(this), this.endTransactionExecutor);

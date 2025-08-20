@@ -27,11 +27,11 @@ public class TransactionalMessageUtil {
     public static Charset charset = StandardCharsets.UTF_8;
 
     public static String buildOpTopic() {
-        return TopicValidator.RMQ_SYS_TRANS_OP_HALF_TOPIC;
+        return TopicValidator.RMQ_SYS_TRANS_OP_HALF_TOPIC; /* 半事务消息 - 操作记录 */
     }
 
     public static String buildHalfTopic() {
-        return TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC;
+        return TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC; /* 半事务消息 - 存储记录 */
     }
 
     public static String buildConsumerGroup() {

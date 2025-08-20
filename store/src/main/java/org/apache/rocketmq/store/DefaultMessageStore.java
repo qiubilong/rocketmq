@@ -98,7 +98,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
 
     private final StoreStatsService storeStatsService;
 
-    private final TransientStorePool transientStorePool;
+    private final TransientStorePool transientStorePool;//堆外内存池
 
     private final RunningFlags runningFlags = new RunningFlags();
     private final SystemClock systemClock = new SystemClock();
@@ -167,8 +167,8 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         this.indexService.start();
 
         this.dispatcherList = new LinkedList<>();
-        this.dispatcherList.addLast(new CommitLogDispatcherBuildConsumeQueue());/* 建立消息offset索引 */
-        this.dispatcherList.addLast(new CommitLogDispatcherBuildIndex());/* 建立消息key索引 */
+        this.dispatcherList.addLast(new CommitLogDispatcherBuildConsumeQueue());/* 重构-  消息消费offset索引 */
+        this.dispatcherList.addLast(new CommitLogDispatcherBuildIndex());      /*  重构- 消息key索引 */
 
         File file = new File(StorePathConfigHelper.getLockFile(messageStoreConfig.getStorePathRootDir()));
         MappedFile.ensureDirOK(file.getParent());
@@ -522,8 +522,8 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
     private PutMessageResult waitForPutResult(CompletableFuture<PutMessageResult> putMessageResultFuture) {
         try {
             int putMessageTimeout =
-                    Math.max(this.messageStoreConfig.getSyncFlushTimeout(),
-                            this.messageStoreConfig.getSlaveTimeout()) + 5000;
+                    Math.max(this.messageStoreConfig.getSyncFlushTimeout(),//5s
+                            this.messageStoreConfig.getSlaveTimeout()) + 5000;// 3s + 5s
             return putMessageResultFuture.get(putMessageTimeout, TimeUnit.MILLISECONDS);
         } catch (ExecutionException | InterruptedException e) {
             return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, null);

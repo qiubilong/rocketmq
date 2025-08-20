@@ -147,8 +147,8 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                 }
 
                 List<Long> doneOpOffset = new ArrayList<>();
-                HashMap<Long, Long> removeMap = new HashMap<>();
-                PullResult pullResult = fillOpRemoveMap(removeMap, opQueue, opOffset, halfOffset, doneOpOffset);
+                HashMap<Long, Long> removeMap = new HashMap<>();//已经确认的半事务消息
+                PullResult pullResult = fillOpRemoveMap(removeMap, opQueue, opOffset, halfOffset, doneOpOffset);/* 拉取 - 半事务消息 - 操作记录 */
                 if (null == pullResult) {
                     log.error("The queue={} check msgOffset={} with opOffset={} failed, pullResult is null",
                         messageQueue, halfOffset, opOffset);
@@ -163,7 +163,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                         log.info("Queue={} process time reach max={}", messageQueue, MAX_PROCESS_TIME_LIMIT);
                         break;
                     }
-                    if (removeMap.containsKey(i)) {
+                    if (removeMap.containsKey(i)) {//已经确认的半事务消息
                         log.debug("Half offset {} has been committed/rolled back", i);
                         Long removedOpOffset = removeMap.remove(i);
                         doneOpOffset.add(removedOpOffset);
@@ -198,7 +198,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                                 new Date(msgExt.getStoreTimestamp()));
                             break;
                         }
-                        /* 半事务消息回查时间 */
+
                         long valueOfCurrentMinusBorn = System.currentTimeMillis() - msgExt.getBornTimestamp();
                         long checkImmunityTime = transactionTimeout;
                         String checkImmunityTimeStr = msgExt.getUserProperty(MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS);
@@ -276,7 +276,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
      */
     private PullResult fillOpRemoveMap(HashMap<Long, Long> removeMap,
         MessageQueue opQueue, long pullOffsetOfOp, long miniOffset, List<Long> doneOpOffset) {
-        PullResult pullResult = pullOpMsg(opQueue, pullOffsetOfOp, 32);
+        PullResult pullResult = pullOpMsg(opQueue, pullOffsetOfOp, 32);/* 拉取 - 半事务消息 - 操作记录 */
         if (null == pullResult) {
             return null;
         }
@@ -304,7 +304,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                 if (queueOffset < miniOffset) {
                     doneOpOffset.add(opMessageExt.getQueueOffset());
                 } else {
-                    removeMap.put(queueOffset, opMessageExt.getQueueOffset());
+                    removeMap.put(queueOffset, opMessageExt.getQueueOffset());/* 已经确认 - 半事务消息 */
                 }
             } else {
                 log.error("Found a illegal tag in opMessageExt= {} ", opMessageExt);
@@ -387,7 +387,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
      * @return Messages pulled from operate message queue.
      */
     private PullResult pullOpMsg(MessageQueue mq, long offset, int nums) {
-        return transactionalMessageBridge.getOpMessage(mq.getQueueId(), offset, nums);
+        return transactionalMessageBridge.getOpMessage(mq.getQueueId(), offset, nums);/* 拉取 - 半事务消息 - 操作记录 */
     }
 
     private Long getLong(String s) {

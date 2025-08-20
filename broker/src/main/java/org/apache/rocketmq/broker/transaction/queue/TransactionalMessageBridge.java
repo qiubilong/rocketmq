@@ -109,7 +109,7 @@ public class TransactionalMessageBridge {
         return getMessage(group, topic, queueId, offset, nums, sub);
     }
 
-    public PullResult getOpMessage(int queueId, long offset, int nums) {
+    public PullResult getOpMessage(int queueId, long offset, int nums) {/* 拉取 - 半事务消息 - 操作记录 */
         String group = TransactionalMessageUtil.buildConsumerGroup();
         String topic = TransactionalMessageUtil.buildOpTopic();
         SubscriptionData sub = new SubscriptionData(topic, "*");
