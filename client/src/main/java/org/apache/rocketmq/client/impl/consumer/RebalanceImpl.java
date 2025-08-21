@@ -42,16 +42,16 @@ import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 
 public abstract class RebalanceImpl {
-    protected static final InternalLogger log = ClientLogger.getLog();
+    protected static final InternalLogger log = ClientLogger.getLog();     /* broker消息队列 - 本地消息队列    */
     protected final ConcurrentMap<MessageQueue, ProcessQueue> processQueueTable = new ConcurrentHashMap<MessageQueue, ProcessQueue>(64);
-    protected final ConcurrentMap<String/* topic */, Set<MessageQueue>> topicSubscribeInfoTable =
+    protected final ConcurrentMap<String/* topic */, Set<MessageQueue>> topicSubscribeInfoTable =   /* topic的消息队列 - 拉取topic路由信息后更新 */
         new ConcurrentHashMap<String, Set<MessageQueue>>();
     protected final ConcurrentMap<String /** topic */, SubscriptionData> subscriptionInner =  /* 订阅的topic */
         new ConcurrentHashMap<String, SubscriptionData>();
     protected String consumerGroup;
-    protected MessageModel messageModel;
-    protected AllocateMessageQueueStrategy allocateMessageQueueStrategy;
-    protected MQClientInstance mQClientFactory;
+    protected MessageModel messageModel;//消费模式
+    protected AllocateMessageQueueStrategy allocateMessageQueueStrategy;//平衡策略
+    protected MQClientInstance mQClientFactory;//通讯客户端
     /* ## 1、消费者启动时会立即触发重平衡     2、定时任务默认每20秒触发一次重平衡    3、 Broker通知当topic路由信息变化时也会触发重平衡 */
     public RebalanceImpl(String consumerGroup, MessageModel messageModel,
         AllocateMessageQueueStrategy allocateMessageQueueStrategy,
@@ -61,7 +61,7 @@ public abstract class RebalanceImpl {
         this.allocateMessageQueueStrategy = allocateMessageQueueStrategy;
         this.mQClientFactory = mQClientFactory;
     }
-
+    /* 顺序消费 - 解锁 - 消息队列 */
     public void unlock(final MessageQueue mq, final boolean oneway) {
         FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(), MixAll.MASTER_ID, true);
         if (findBrokerResult != null) {
@@ -336,10 +336,10 @@ public abstract class RebalanceImpl {
             MessageQueue mq = next.getKey();
             ProcessQueue pq = next.getValue();
 
-            if (mq.getTopic().equals(topic)) {/* 1、移除非自己的MessageQueue */
+            if (mq.getTopic().equals(topic)) {/* 1、移除 非自己的 MessageQueue */
                 if (!mqSet.contains(mq)) {
                     pq.setDropped(true);
-                    if (this.removeUnnecessaryMessageQueue(mq, pq)) {
+                    if (this.removeUnnecessaryMessageQueue(mq, pq)) {;/* 1.1 持久化消费偏移 */
                         it.remove();
                         changed = true;
                         log.info("doRebalance, {}, remove unnecessary mq, {}", consumerGroup, mq);
@@ -378,7 +378,7 @@ public abstract class RebalanceImpl {
 
                 long nextOffset = -1L;
                 try {
-                    nextOffset = this.computePullFromWhereWithException(mq);
+                    nextOffset = this.computePullFromWhereWithException(mq);/* 2.2  重新拉取消费偏移 */
                 } catch (Exception e) {
                     log.info("doRebalance, {}, compute offset failed, {}", consumerGroup, mq);
                     continue;
@@ -390,7 +390,7 @@ public abstract class RebalanceImpl {
                         log.info("doRebalance, {}, mq already exists, {}", consumerGroup, mq);
                     } else {
                         log.info("doRebalance, {}, add a new mq, {}", consumerGroup, mq);
-                        PullRequest pullRequest = new PullRequest(); /* 2.1  构建拉取消息请求 */
+                        PullRequest pullRequest = new PullRequest(); /* 2.3  构建拉取消息请求 */
                         pullRequest.setConsumerGroup(consumerGroup);
                         pullRequest.setNextOffset(nextOffset);
                         pullRequest.setMessageQueue(mq);

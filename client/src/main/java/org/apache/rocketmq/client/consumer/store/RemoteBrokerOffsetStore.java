@@ -43,7 +43,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     private final static InternalLogger log = ClientLogger.getLog();
     private final MQClientInstance mQClientFactory;
     private final String groupName;
-    private ConcurrentMap<MessageQueue, AtomicLong> offsetTable =  /* 分区消费偏移offset */
+    private ConcurrentMap<MessageQueue, AtomicLong> offsetTable =  /* 分区消费偏移 offset */
         new ConcurrentHashMap<MessageQueue, AtomicLong>();
 
     public RemoteBrokerOffsetStore(MQClientInstance mQClientFactory, String groupName) {
@@ -88,7 +88,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
                 }
                 case READ_FROM_STORE: {
                     try {
-                        long brokerOffset = this.fetchConsumeOffsetFromBroker(mq);
+                        long brokerOffset = this.fetchConsumeOffsetFromBroker(mq); /* 重新拉取 - 消费偏移 */
                         AtomicLong offset = new AtomicLong(brokerOffset);
                         this.updateOffset(mq, offset.get(), false);
                         return brokerOffset;

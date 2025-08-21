@@ -40,14 +40,14 @@ import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
 /**
  * Queue consumption snapshot
  */
-public class ProcessQueue { /* 消费者 - MessageQueue对应的消息缓存队列 */
+public class ProcessQueue { /* 消费者 - MessageQueue对应的 -  本地消息缓存队列 */
     public final static long REBALANCE_LOCK_MAX_LIVE_TIME =
         Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockMaxLiveTime", "30000"));
     public final static long REBALANCE_LOCK_INTERVAL = Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockInterval", "20000"));
     private final static long PULL_MAX_IDLE_TIME = Long.parseLong(System.getProperty("rocketmq.client.pull.pullMaxIdleTime", "120000"));
     private final InternalLogger log = ClientLogger.getLog();
     private final ReadWriteLock treeMapLock = new ReentrantReadWriteLock();
-    private final TreeMap<Long/**offset*/, MessageExt> msgTreeMap = new TreeMap<Long, MessageExt>(); /* offset有序的待消费 消息缓存队列 */
+    private final TreeMap<Long/**offset*/, MessageExt> msgTreeMap = new TreeMap<Long, MessageExt>(); /* offset有序的 - 待消费的  - 消息缓存队列 */
     private final AtomicLong msgCount = new AtomicLong();
     private final AtomicLong msgSize = new AtomicLong();
     private final Lock consumeLock = new ReentrantLock();
@@ -57,10 +57,10 @@ public class ProcessQueue { /* 消费者 - MessageQueue对应的消息缓存队�
     private final TreeMap<Long, MessageExt> consumingMsgOrderlyTreeMap = new TreeMap<Long, MessageExt>();
     private final AtomicLong tryUnlockTimes = new AtomicLong(0);
     private volatile long queueOffsetMax = 0L; /* 目前拉取消息的最大偏移量 */
-    private volatile boolean dropped = false;
+    private volatile boolean dropped = false;//重平衡后移除
     private volatile long lastPullTimestamp = System.currentTimeMillis();
     private volatile long lastConsumeTimestamp = System.currentTimeMillis();
-    private volatile boolean locked = false;
+    private volatile boolean locked = false; /* 顺序消费时，队列加锁状态 */
     private volatile long lastLockTimestamp = System.currentTimeMillis();
     private volatile boolean consuming = false;
     private volatile long msgAccCnt = 0;

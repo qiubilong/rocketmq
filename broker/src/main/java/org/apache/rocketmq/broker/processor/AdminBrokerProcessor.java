@@ -140,7 +140,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.store.config.BrokerRole;
-
+ /* broker默认 - 请求处理器 */
 public class AdminBrokerProcessor extends AsyncNettyRequestProcessor {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final BrokerController brokerController;
@@ -174,7 +174,7 @@ public class AdminBrokerProcessor extends AsyncNettyRequestProcessor {
             case RequestCode.GET_BROKER_RUNTIME_INFO:
                 return this.getBrokerRuntimeInfo(ctx, request);
             case RequestCode.LOCK_BATCH_MQ:
-                return this.lockBatchMQ(ctx, request);
+                return this.lockBatchMQ(ctx, request); /* 顺序消费 - 锁定队列 */
             case RequestCode.UNLOCK_BATCH_MQ:
                 return this.unlockBatchMQ(ctx, request);
             case RequestCode.UPDATE_AND_CREATE_SUBSCRIPTIONGROUP:

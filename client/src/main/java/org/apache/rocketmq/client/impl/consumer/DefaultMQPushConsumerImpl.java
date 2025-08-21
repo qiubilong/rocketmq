@@ -102,7 +102,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     private static final long CONSUMER_TIMEOUT_MILLIS_WHEN_SUSPEND = 1000 * 30;
     private final InternalLogger log = ClientLogger.getLog();
     private final DefaultMQPushConsumer defaultMQPushConsumer;
-    private final RebalanceImpl rebalanceImpl = new RebalancePushImpl(this);
+    private final RebalanceImpl rebalanceImpl = new RebalancePushImpl(this); /* 消费重平衡 */
     private final ArrayList<FilterMessageHook> filterMessageHookList = new ArrayList<FilterMessageHook>();
     private final long consumerStartTimestamp = System.currentTimeMillis();
     private final ArrayList<ConsumeMessageHook> consumeMessageHookList = new ArrayList<ConsumeMessageHook>();
@@ -242,7 +242,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         long cachedMessageCount = processQueue.getMsgCount().get();
         long cachedMessageSizeInMiB = processQueue.getMsgSize().get() / (1024 * 1024);
 
-        if (cachedMessageCount > this.defaultMQPushConsumer.getPullThresholdForQueue()) {
+        if (cachedMessageCount > this.defaultMQPushConsumer.getPullThresholdForQueue()) {//1000条
             this.executePullRequestLater(pullRequest, PULL_TIME_DELAY_MILLS_WHEN_CACHE_FLOW_CONTROL);
             if ((queueFlowControlTimes++ % 1000) == 0) {
                 log.warn(
@@ -252,7 +252,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             return;
         }
 
-        if (cachedMessageSizeInMiB > this.defaultMQPushConsumer.getPullThresholdSizeForQueue()) {
+        if (cachedMessageSizeInMiB > this.defaultMQPushConsumer.getPullThresholdSizeForQueue()) {//100M
             this.executePullRequestLater(pullRequest, PULL_TIME_DELAY_MILLS_WHEN_CACHE_FLOW_CONTROL);
             if ((queueFlowControlTimes++ % 1000) == 0) {
                 log.warn(
@@ -486,7 +486,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     }
 
     public void executePullRequestImmediately(final PullRequest pullRequest) {
-        this.mQClientFactory.getPullMessageService().executePullRequestImmediately(pullRequest);
+        this.mQClientFactory.getPullMessageService().executePullRequestImmediately(pullRequest);/* 拉取消息请求 */
     }
 
     private void correctTagsOffset(final PullRequest pullRequest) {
@@ -588,7 +588,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     this.defaultMQPushConsumer.getMessageModel(), this.defaultMQPushConsumer.isUnitMode());
                 this.serviceState = ServiceState.START_FAILED;
 
-                this.checkConfig();
+                this.checkConfig();//设置检查
 
                 this.copySubscription();
 
@@ -612,10 +612,10 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     this.offsetStore = this.defaultMQPushConsumer.getOffsetStore();
                 } else {
                     switch (this.defaultMQPushConsumer.getMessageModel()) {
-                        case BROADCASTING:         /* 广播消费模式，消息存储在本地 */
+                        case BROADCASTING:         /* 广播消费模式，消费偏移 - 存储在本地 */
                             this.offsetStore = new LocalFileOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
                             break;
-                        case CLUSTERING:
+                        case CLUSTERING:            /* 集群消费模式，消费偏移 - 存储在Broker */
                             this.offsetStore = new RemoteBrokerOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
                             break;
                         default:
@@ -661,7 +661,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 break;
         }
 
-        this.updateTopicSubscribeInfoWhenSubscriptionChanged(); /* ## 拉取topic路由*/
+        this.updateTopicSubscribeInfoWhenSubscriptionChanged(); /* ## 拉取topic分区消息队列*/
         this.mQClientFactory.checkClientInBroker();             /* ## 建立Broker连接Channel */
         this.mQClientFactory.sendHeartbeatToAllBrokerWithLock();/* ## 发送心跳 */
         this.mQClientFactory.rebalanceImmediately();            /* ## topic分区消费重平衡 */
@@ -857,7 +857,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 case BROADCASTING:
                     break;
                 case CLUSTERING:
-                    final String retryTopic = MixAll.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup());
+                    final String retryTopic = MixAll.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup());/* 消费组 - 重试消费队列 */
                     SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(retryTopic, SubscriptionData.SUB_ALL);
                     this.rebalanceImpl.getSubscriptionInner().put(retryTopic, subscriptionData);
                     break;

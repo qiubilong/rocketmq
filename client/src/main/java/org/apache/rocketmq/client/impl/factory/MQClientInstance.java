@@ -529,7 +529,7 @@ public class MQClientInstance {
     }
 
     private void sendHeartbeatToAllBroker() {
-        final HeartbeatData heartbeatData = this.prepareHeartbeatData();
+        final HeartbeatData heartbeatData = this.prepareHeartbeatData();/* 1、构建心跳信息 */
         final boolean producerEmpty = heartbeatData.getProducerDataSet().isEmpty();
         final boolean consumerEmpty = heartbeatData.getConsumerDataSet().isEmpty();
         if (producerEmpty && consumerEmpty) {
@@ -545,7 +545,7 @@ public class MQClientInstance {
                 String brokerName = entry.getKey();
                 HashMap<Long, String> oneTable = entry.getValue();
                 if (oneTable != null) {
-                    for (Map.Entry<Long, String> entry1 : oneTable.entrySet()) {
+                    for (Map.Entry<Long, String> entry1 : oneTable.entrySet()) { /* 2、遍历broker  */
                         Long id = entry1.getKey();
                         String addr = entry1.getValue();
                         if (addr != null) {
@@ -554,7 +554,7 @@ public class MQClientInstance {
                                     continue;
                             }
 
-                            try {
+                            try {                                  /* 3、发送心跳  */
                                 int version = this.mQClientAPIImpl.sendHeartbeat(addr, heartbeatData, clientConfig.getMqClientApiTimeout());
                                 if (!this.brokerVersionTable.containsKey(brokerName)) {
                                     this.brokerVersionTable.put(brokerName, new HashMap<String, Integer>(4));
@@ -660,7 +660,7 @@ public class MQClientInstance {
                                     Entry<String, MQConsumerInner> entry = it.next();
                                     MQConsumerInner impl = entry.getValue();
                                     if (impl != null) {
-                                        impl.updateTopicSubscribeInfo(topic, subscribeInfo);
+                                        impl.updateTopicSubscribeInfo(topic, subscribeInfo);/* 更新 - consumer - topic分区消息队列 */
                                     }
                                 }
                             }

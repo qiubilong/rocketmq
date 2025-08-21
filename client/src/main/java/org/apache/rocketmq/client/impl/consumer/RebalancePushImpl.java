@@ -83,14 +83,14 @@ public class RebalancePushImpl extends RebalanceImpl {
 
     @Override
     public boolean removeUnnecessaryMessageQueue(MessageQueue mq, ProcessQueue pq) {
-        this.defaultMQPushConsumerImpl.getOffsetStore().persist(mq);
+        this.defaultMQPushConsumerImpl.getOffsetStore().persist(mq);/* 持久化消费偏移 */
         this.defaultMQPushConsumerImpl.getOffsetStore().removeOffset(mq);
         if (this.defaultMQPushConsumerImpl.isConsumeOrderly()
             && MessageModel.CLUSTERING.equals(this.defaultMQPushConsumerImpl.messageModel())) {
             try {
                 if (pq.getConsumeLock().tryLock(1000, TimeUnit.MILLISECONDS)) {
                     try {
-                        return this.unlockDelay(mq, pq);
+                        return this.unlockDelay(mq, pq);/* 如果是顺序消费，则 移除  - 消息队列 -  锁定状态 */
                     } finally {
                         pq.getConsumeLock().unlock();
                     }
@@ -229,7 +229,7 @@ public class RebalancePushImpl extends RebalanceImpl {
     @Override
     public void dispatchPullRequest(List<PullRequest> pullRequestList) {
         for (PullRequest pullRequest : pullRequestList) {
-            this.defaultMQPushConsumerImpl.executePullRequestImmediately(pullRequest);
+            this.defaultMQPushConsumerImpl.executePullRequestImmediately(pullRequest); /* 拉取消息请求 */
             log.info("doRebalance, {}, add a new pull request {}", consumerGroup, pullRequest);
         }
     }

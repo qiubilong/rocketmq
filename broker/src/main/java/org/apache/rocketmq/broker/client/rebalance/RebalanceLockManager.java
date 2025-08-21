@@ -32,7 +32,7 @@ public class RebalanceLockManager {
     private final static long REBALANCE_LOCK_MAX_LIVE_TIME = Long.parseLong(System.getProperty(
         "rocketmq.broker.rebalance.lockMaxLiveTime", "60000"));
     private final Lock lock = new ReentrantLock();
-    private final ConcurrentMap<String/* group */, ConcurrentHashMap<MessageQueue, LockEntry>> mqLockTable =
+    private final ConcurrentMap<String/* group */, ConcurrentHashMap<MessageQueue, LockEntry>> mqLockTable = /* 顺序消费 - 消息队列 - 锁 */
         new ConcurrentHashMap<String, ConcurrentHashMap<MessageQueue, LockEntry>>(1024);
 
     public boolean tryLock(final String group, final MessageQueue mq, final String clientId) {
@@ -142,7 +142,7 @@ public class RebalanceLockManager {
                         if (null == lockEntry) {
                             lockEntry = new LockEntry();
                             lockEntry.setClientId(clientId);
-                            groupValue.put(mq, lockEntry);
+                            groupValue.put(mq, lockEntry); /* 锁定队列 */
                             log.info(
                                 "tryLockBatch, message queue not locked, I got it. Group: {} NewClientId: {} {}",
                                 group,
@@ -158,7 +158,7 @@ public class RebalanceLockManager {
 
                         String oldClientId = lockEntry.getClientId();
 
-                        if (lockEntry.isExpired()) {
+                        if (lockEntry.isExpired()) {/* 60s过期 */
                             lockEntry.setClientId(clientId);
                             lockEntry.setLastUpdateTimestamp(System.currentTimeMillis());
                             log.warn(
@@ -232,7 +232,7 @@ public class RebalanceLockManager {
     }
 
     static class LockEntry {
-        private String clientId;
+        private String clientId; /* 消费者实例 */
         private volatile long lastUpdateTimestamp = System.currentTimeMillis();
 
         public String getClientId() {
@@ -258,7 +258,7 @@ public class RebalanceLockManager {
 
         public boolean isExpired() {
             boolean expired =
-                (System.currentTimeMillis() - this.lastUpdateTimestamp) > REBALANCE_LOCK_MAX_LIVE_TIME;
+                (System.currentTimeMillis() - this.lastUpdateTimestamp) > REBALANCE_LOCK_MAX_LIVE_TIME;//60s过期
 
             return expired;
         }

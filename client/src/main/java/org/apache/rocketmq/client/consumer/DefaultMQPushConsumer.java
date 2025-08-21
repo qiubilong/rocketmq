@@ -91,7 +91,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      *
      * This field defaults to clustering.
      */
-    private MessageModel messageModel = MessageModel.CLUSTERING;
+    private MessageModel messageModel = MessageModel.CLUSTERING; /* 默认 - 集群消费模式 */
 
     /**
      * Consuming point on consumer booting.
@@ -157,7 +157,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Minimum consumer thread number
      */
-    private int consumeThreadMin = 20;
+    private int consumeThreadMin = 20;   /* 消费者线程池 */
 
     /**
      * Max consumer thread number
@@ -219,12 +219,12 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Batch consumption size
      */
-    private int consumeMessageBatchMaxSize = 1;
+    private int consumeMessageBatchMaxSize = 1; /* 默认 每次消费一个 */
 
     /**
      * Batch pull size
      */
-    private int pullBatchSize = 32;
+    private int pullBatchSize = 32; /* 拉取消息个数 */
 
     /**
      * Whether update subscription relationship when every pull
@@ -278,7 +278,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * @param consumerGroup Consumer group.
      */
     public DefaultMQPushConsumer(final String consumerGroup) {
-        this(null, consumerGroup, null, new AllocateMessageQueueAveragely());
+        this(null, consumerGroup, null, new AllocateMessageQueueAveragely());/* 消费组内实例 平均分配 消息队列 */
     }
 
     /**

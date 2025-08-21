@@ -61,9 +61,9 @@ public class RequestCode {
 
     public static final int NOTIFY_CONSUMER_IDS_CHANGED = 40;
 
-    public static final int LOCK_BATCH_MQ = 41;
+    public static final int LOCK_BATCH_MQ = 41;   /* 顺序消费 - 锁定 - 消息队列 */
 
-    public static final int UNLOCK_BATCH_MQ = 42;
+    public static final int UNLOCK_BATCH_MQ = 42; /* 顺序消费 - 解锁 - 消息队列 */
     public static final int GET_ALL_CONSUMER_OFFSET = 43;
 
     public static final int GET_ALL_DELAY_OFFSET = 45;
