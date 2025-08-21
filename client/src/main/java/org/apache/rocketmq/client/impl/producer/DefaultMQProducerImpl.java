@@ -592,7 +592,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             default:
                                 break;
                         }
-                    } catch (RemotingException e) {//发送超时，进行重试
+                    } catch (RemotingException e) {/* 发送超时，进行重试 */
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true);
                         log.warn(String.format("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq), e);
@@ -1121,9 +1121,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         long beginStartTime = System.currentTimeMillis();
         this.makeSureStateOK();
-        Validators.checkMessage(msg, this.defaultMQProducer);
+        Validators.checkMessage(msg, this.defaultMQProducer); /* 1、检查消息 */
 
-        TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
+        TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());/* 2、查找topic路由 */
         if (topicPublishInfo != null && topicPublishInfo.ok()) {
             MessageQueue mq = null;
             try {
@@ -1133,7 +1133,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 String userTopic = NamespaceUtil.withoutNamespace(userMessage.getTopic(), mQClientFactory.getClientConfig().getNamespace());
                 userMessage.setTopic(userTopic);
 
-                mq = mQClientFactory.getClientConfig().queueWithNamespace(selector.select(messageQueueList, userMessage, arg));
+                mq = mQClientFactory.getClientConfig().queueWithNamespace(selector.select(messageQueueList, userMessage, arg)); /* 3、选择消息队列 */
             } catch (Throwable e) {
                 throw new MQClientException("select message queue threw exception.", e);
             }
@@ -1143,7 +1143,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 throw new RemotingTooMuchRequestException("sendSelectImpl call timeout");
             }
             if (mq != null) {
-                return this.sendKernelImpl(msg, mq, communicationMode, sendCallback, null, timeout - costTime);
+                return this.sendKernelImpl(msg, mq, communicationMode, sendCallback, null, timeout - costTime);/* 4、发送消息 */
             } else {
                 throw new MQClientException("select message queue return null.", null);
             }

@@ -255,7 +255,7 @@ public abstract class NettyRemotingAbstract {
             try {
                 final RequestTask requestTask = new RequestTask(run, ctx.channel(), cmd);
                 pair.getObject2().submit(requestTask); /* 执行异步任务 */
-            } catch (RejectedExecutionException e) {
+            } catch (RejectedExecutionException e) { /* 异步线程 */
                 if ((System.currentTimeMillis() % 10000) == 0) {
                     log.warn(RemotingHelper.parseChannelRemoteAddr(ctx.channel())
                         + ", too many requests and system thread pool busy, RejectedExecutionException "

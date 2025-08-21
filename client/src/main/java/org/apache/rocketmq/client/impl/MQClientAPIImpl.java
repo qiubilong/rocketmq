@@ -200,7 +200,7 @@ public class MQClientAPIImpl {
         if (clientConfig.isEnableStreamRequestType()) {
             this.remotingClient.registerRPCHook(new StreamTypeRPCHook());
         }   /* 2、注册 - 收到请求命令处理器 */
-        this.remotingClient.registerRPCHook(rpcHook);
+        this.remotingClient.registerRPCHook(rpcHook);     /* 半事务消息回查 */
         this.remotingClient.registerProcessor(RequestCode.CHECK_TRANSACTION_STATE, this.clientRemotingProcessor, null);
 
         this.remotingClient.registerProcessor(RequestCode.NOTIFY_CONSUMER_IDS_CHANGED, this.clientRemotingProcessor, null);
