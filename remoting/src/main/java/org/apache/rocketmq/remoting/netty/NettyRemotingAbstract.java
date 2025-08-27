@@ -62,12 +62,12 @@ public abstract class NettyRemotingAbstract {
     /**
      * Semaphore to limit maximum number of on-going one-way requests, which protects system memory footprint.
      */
-    protected final Semaphore semaphoreOneway;
+    protected final Semaphore semaphoreOneway; /* 限流 - 65535 */
 
     /**
      * Semaphore to limit maximum number of on-going asynchronous requests, which protects system memory footprint.
      */
-    protected final Semaphore semaphoreAsync;
+    protected final Semaphore semaphoreAsync; /* 限流 - 65535 */
 
     /**
      * This map caches all on-going requests.
