@@ -130,7 +130,7 @@ public class ProcessQueue { /* 消费者 - MessageQueue对应的 -  本地消息
         }
     }
 
-    public boolean putMessage(final List<MessageExt> msgs) {
+    public boolean putMessage(final List<MessageExt> msgs) {   /* 缓存 - 拉取成功的消息 */
         boolean dispatchToConsume = false;
         try {
             this.treeMapLock.writeLock().lockInterruptibly();
@@ -188,7 +188,7 @@ public class ProcessQueue { /* 消费者 - MessageQueue对应的 -  本地消息
         return 0;
     }
 
-    public long removeMessage(final List<MessageExt> msgs) {
+    public long removeMessage(final List<MessageExt> msgs) {  /* 消费消息成功 - 移除本地缓存 */
         long result = -1;
         final long now = System.currentTimeMillis();
         try {
