@@ -123,7 +123,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * messages born prior to {@link #consumeTimestamp} will be ignored
      * </li>
      * </ul>
-     */                                        /* 默认从上次偏移开始消费 */
+     */                                        /* 默认 从上次偏移 开始消费 */
     private ConsumeFromWhere consumeFromWhere = ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET;
 
     /**
@@ -253,7 +253,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Maximum amount of time in minutes a message may block the consuming thread.
      */
-    private long consumeTimeout = 15;
+    private long consumeTimeout = 15;//消费超时 - 15分钟 - 业务处理或者本地消息队列processQueue超时，将会把消息转存重试队列
 
     /**
      * Maximum time to await message consuming when shutdown consumer, 0 indicates no await.

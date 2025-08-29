@@ -94,7 +94,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             @Override
             public void run() {
                 try {
-                    cleanExpireMsg();
+                    cleanExpireMsg();/* 移除 超过15分钟 没消费的消息 */
                 } catch (Throwable e) {
                     log.error("scheduleAtFixedRate cleanExpireMsg exception", e);
                 }
@@ -228,7 +228,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
     }
 
 
-    private void cleanExpireMsg() {
+    private void cleanExpireMsg() {/* 移除 超过15分钟 没消费的消息 */
         Iterator<Map.Entry<MessageQueue, ProcessQueue>> it =
             this.defaultMQPushConsumerImpl.getRebalanceImpl().getProcessQueueTable().entrySet().iterator();
         while (it.hasNext()) {

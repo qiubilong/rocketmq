@@ -76,7 +76,7 @@ public class ProcessQueue { /* 消费者 - MessageQueue对应的 -  本地消息
     /**
      * @param pushConsumer
      */
-    public void cleanExpiredMsg(DefaultMQPushConsumer pushConsumer) {
+    public void cleanExpiredMsg(DefaultMQPushConsumer pushConsumer) { /* 移除 超过15分钟 没消费的消息 */
         if (pushConsumer.getDefaultMQPushConsumerImpl().isConsumeOrderly()) {
             return;
         }

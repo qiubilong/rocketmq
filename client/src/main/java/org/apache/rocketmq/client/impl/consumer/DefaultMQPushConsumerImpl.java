@@ -114,7 +114,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     private boolean consumeOrderly = false;
     private MessageListener messageListenerInner; /* ## 业务端 - 消息监听处理器 */
     private OffsetStore offsetStore;              /* ## 消费偏移Offset存储器 - RemoteBrokerOffsetStore */
-    private ConsumeMessageService consumeMessageService;
+    private ConsumeMessageService consumeMessageService; /* 并发/顺序消费实现类 */
     private long queueFlowControlTimes = 0;
     private long queueMaxSpanFlowControlTimes = 0;
 
@@ -366,7 +366,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
                             DefaultMQPushConsumerImpl.this.correctTagsOffset(pullRequest);
 
-                            DefaultMQPushConsumerImpl.this.executePullRequestImmediately(pullRequest);
+                            DefaultMQPushConsumerImpl.this.executePullRequestImmediately(pullRequest); /* 长轮训-超时  --> 继续请求拉取消息  */
                             break;
                         case OFFSET_ILLEGAL:
                             log.warn("the pull request offset illegal, {} {}",
@@ -456,7 +456,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             );
         } catch (Exception e) {
             log.error("pullKernelImpl exception", e);
-            this.executePullRequestLater(pullRequest, pullTimeDelayMillsWhenException);
+            this.executePullRequestLater(pullRequest, pullTimeDelayMillsWhenException);//拉取异常，3s重试
         }
     }
 
@@ -593,7 +593,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 this.copySubscription();
 
                 if (this.defaultMQPushConsumer.getMessageModel() == MessageModel.CLUSTERING) {
-                    this.defaultMQPushConsumer.changeInstanceNameToPID();//如果没有设置实例名字，设置消费者实例名为pid@hostname@timestamp
+                    this.defaultMQPushConsumer.changeInstanceNameToPID();//如果没有设置实例名字，设置消费者实例名为pid + nanoTime
                 }
                                                                      /* 创建netty客户端*/
                 this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
@@ -612,7 +612,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     this.offsetStore = this.defaultMQPushConsumer.getOffsetStore();
                 } else {
                     switch (this.defaultMQPushConsumer.getMessageModel()) {
-                        case BROADCASTING:         /* 广播消费模式，消费偏移 - 存储在本地 */
+                        case BROADCASTING:         // 广播消费模式，消费偏移 - 存储在本地
                             this.offsetStore = new LocalFileOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
                             break;
                         case CLUSTERING:            /* 集群消费模式，消费偏移 - 存储在Broker */
@@ -818,7 +818,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     + FAQUrl.suggestTodo(FAQUrl.CLIENT_PARAMETER_CHECK_URL),
                 null);
         }
-        /* 消费消息批量 - 默认 1 */
+        /* 业务消费批量 - 默认 1 */
         // consumeMessageBatchMaxSize
         if (this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize() < 1
             || this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize() > 1024) {

@@ -106,11 +106,11 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         this.nettyClientConfig = nettyClientConfig;
         this.channelEventListener = channelEventListener;
 
-        int publicThreadNums = nettyClientConfig.getClientCallbackExecutorThreads();
+        int publicThreadNums = nettyClientConfig.getClientCallbackExecutorThreads();//Runtime.getRuntime().availableProcessors();
         if (publicThreadNums <= 0) {
             publicThreadNums = 4;
         }
-
+        /* 收到请求，异步处理线程池 */
         this.publicExecutor = Executors.newFixedThreadPool(publicThreadNums, new ThreadFactory() {
             private AtomicInteger threadIndex = new AtomicInteger(0);
 

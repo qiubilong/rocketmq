@@ -587,11 +587,11 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
 
         final long maxOffsetPy = this.commitLog.getMaxOffset();
 
-        ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);
+        ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);/* 找到消息队列 */
         if (consumeQueue != null) {
             minOffset = consumeQueue.getMinOffsetInQueue();
             maxOffset = consumeQueue.getMaxOffsetInQueue();
-
+            //偏移量校验
             if (maxOffset == 0) {
                 status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
                 nextBeginOffset = nextOffsetCorrection(offset, 0);
@@ -605,7 +605,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
                 status = GetMessageStatus.OFFSET_OVERFLOW_BADLY;
                 nextBeginOffset = nextOffsetCorrection(offset, maxOffset);
             } else {
-                SelectMappedBufferResult bufferConsumeQueue = consumeQueue.getIndexBuffer(offset);
+                SelectMappedBufferResult bufferConsumeQueue = consumeQueue.getIndexBuffer(offset); /* 消费队列 - 20字节一项 */
                 if (bufferConsumeQueue != null) {
                     try {
                         status = GetMessageStatus.NO_MATCHED_MESSAGE;
@@ -613,17 +613,17 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
                         long nextPhyFileStartOffset = Long.MIN_VALUE;
                         long maxPhyOffsetPulling = 0;
 
-                        int i = 0;
+                        int i = 0;                       /* Math.max(16000, 32 * 20);  -->  表明批量最多获取800条消息 */
                         final int maxFilterMessageCount = Math.max(16000, maxMsgNums * ConsumeQueue.CQ_STORE_UNIT_SIZE);
                         final boolean diskFallRecorded = this.messageStoreConfig.isDiskFallRecorded();
 
                         getResult = new GetMessageResult(maxMsgNums);
 
                         ConsumeQueueExt.CqExtUnit cqExtUnit = new ConsumeQueueExt.CqExtUnit();
-                        for (; i < bufferConsumeQueue.getSize() && i < maxFilterMessageCount; i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {
-                            long offsetPy = bufferConsumeQueue.getByteBuffer().getLong();
-                            int sizePy = bufferConsumeQueue.getByteBuffer().getInt();
-                            long tagsCode = bufferConsumeQueue.getByteBuffer().getLong();
+                        for (; i < bufferConsumeQueue.getSize() && i < maxFilterMessageCount; i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {/* 遍历获取消息， */
+                            long offsetPy = bufferConsumeQueue.getByteBuffer().getLong();/* 存储偏移 -8字节 */
+                            int sizePy = bufferConsumeQueue.getByteBuffer().getInt();    /* 消息大小 -4字节 */
+                            long tagsCode = bufferConsumeQueue.getByteBuffer().getLong();/* 消息标签 -8字节 */
 
                             maxPhyOffsetPulling = offsetPy;
 
@@ -661,7 +661,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
                                 continue;
                             }
 
-                            SelectMappedBufferResult selectResult = this.commitLog.getMessage(offsetPy, sizePy);
+                            SelectMappedBufferResult selectResult = this.commitLog.getMessage(offsetPy, sizePy);/* 读取一条消息 */
                             if (null == selectResult) {
                                 if (getResult.getBufferTotalSize() == 0) {
                                     status = GetMessageStatus.MESSAGE_WAS_REMOVING;

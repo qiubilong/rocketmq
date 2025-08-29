@@ -42,7 +42,7 @@ import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 
 public abstract class RebalanceImpl {
-    protected static final InternalLogger log = ClientLogger.getLog();     /* broker消息队列 - 本地消息队列    */
+    protected static final InternalLogger log = ClientLogger.getLog();     /* broker消息队列 <-> 本地消息队列    */
     protected final ConcurrentMap<MessageQueue, ProcessQueue> processQueueTable = new ConcurrentHashMap<MessageQueue, ProcessQueue>(64);
     protected final ConcurrentMap<String/* topic */, Set<MessageQueue>> topicSubscribeInfoTable =   /* topic的消息队列 - 拉取topic路由信息后更新 */
         new ConcurrentHashMap<String, Set<MessageQueue>>();
@@ -373,7 +373,7 @@ public abstract class RebalanceImpl {
                 }
 
                 this.removeDirtyOffset(mq);
-                ProcessQueue pq = new ProcessQueue();
+                ProcessQueue pq = new ProcessQueue();//本地消息缓存队列
                 pq.setLocked(true);
 
                 long nextOffset = -1L;

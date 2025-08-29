@@ -34,7 +34,7 @@ public class PullRequestHoldService extends ServiceThread {
     protected static final String TOPIC_QUEUEID_SEPARATOR = "@";
     protected final BrokerController brokerController;
     private final SystemClock systemClock = new SystemClock();
-    protected ConcurrentMap<String/* topic@queueId */, ManyPullRequest> pullRequestTable =
+    protected ConcurrentMap<String/* topic@queueId */, ManyPullRequest> pullRequestTable = /* 等待 push新消息 请求集合 */
         new ConcurrentHashMap<String, ManyPullRequest>(1024);
 
     public PullRequestHoldService(final BrokerController brokerController) {
@@ -94,14 +94,14 @@ public class PullRequestHoldService extends ServiceThread {
     }
 
     protected void checkHoldRequest() {
-        for (String key : this.pullRequestTable.keySet()) {
+        for (String key : this.pullRequestTable.keySet()) { /* 遍历 长轮训请求 */
             String[] kArray = key.split(TOPIC_QUEUEID_SEPARATOR);
             if (2 == kArray.length) {
                 String topic = kArray[0];
                 int queueId = Integer.parseInt(kArray[1]);
                 final long offset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
                 try {
-                    this.notifyMessageArriving(topic, queueId, offset);
+                    this.notifyMessageArriving(topic, queueId, offset);/* 如果有新消息，则响应请求空结果，唤醒消费者继续请求 */
                 } catch (Throwable e) {
                     log.error("check hold request failed. topic={}, queueId={}", topic, queueId, e);
                 }
@@ -118,7 +118,7 @@ public class PullRequestHoldService extends ServiceThread {
         String key = this.buildKey(topic, queueId);
         ManyPullRequest mpr = this.pullRequestTable.get(key);
         if (mpr != null) {
-            List<PullRequest> requestList = mpr.cloneListAndClear();
+            List<PullRequest> requestList = mpr.cloneListAndClear();//复制一份
             if (requestList != null) {
                 List<PullRequest> replayList = new ArrayList<PullRequest>();
 
@@ -128,7 +128,7 @@ public class PullRequestHoldService extends ServiceThread {
                         newestOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
                     }
 
-                    if (newestOffset > request.getPullFromThisOffset()) {
+                    if (newestOffset > request.getPullFromThisOffset()) {/* 比较消息偏移 */
                         boolean match = request.getMessageFilter().isMatchedByConsumeQueue(tagsCode,
                             new ConsumeQueueExt.CqExtUnit(tagsCode, msgStoreTime, filterBitMap));
                         // match by bit map, need eval again when properties is not null.
@@ -137,7 +137,7 @@ public class PullRequestHoldService extends ServiceThread {
                         }
 
                         if (match) {
-                            try {
+                            try {                                              /* 1、新消息到来，响应空结果 --> 唤醒消费者继续请求 */
                                 this.brokerController.getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
                                     request.getRequestCommand());
                             } catch (Throwable e) {
@@ -146,7 +146,7 @@ public class PullRequestHoldService extends ServiceThread {
                             continue;
                         }
                     }
-
+                                                                                /* 2、超时，响应空结果 --> 唤醒消费者继续请求 */
                     if (System.currentTimeMillis() >= (request.getSuspendTimestamp() + request.getTimeoutMillis())) {
                         try {
                             this.brokerController.getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
@@ -157,7 +157,7 @@ public class PullRequestHoldService extends ServiceThread {
                         continue;
                     }
 
-                    replayList.add(request);
+                    replayList.add(request);//超时，继续长轮训
                 }
 
                 if (!replayList.isEmpty()) {
