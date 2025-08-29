@@ -760,7 +760,7 @@ public class MQClientAPIImpl {
                 } else {
                     if (!responseFuture.isSendRequestOK()) {
                         pullCallback.onException(new MQClientException("send request failed to " + addr + ". Request: " + request, responseFuture.getCause()));
-                    } else if (responseFuture.isTimeout()) {
+                    } else if (responseFuture.isTimeout()) { /* 请求超时，继续拉取消息 */
                         pullCallback.onException(new MQClientException("wait response from " + addr + " timeout :" + responseFuture.getTimeoutMillis() + "ms" + ". Request: " + request,
                             responseFuture.getCause()));
                     } else {

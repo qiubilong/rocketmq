@@ -388,7 +388,7 @@ public abstract class NettyRemotingAbstract {
         while (it.hasNext()) {
             Entry<Integer, ResponseFuture> next = it.next();
             ResponseFuture rep = next.getValue();
-
+            /* 删除超时请求 */
             if ((rep.getBeginTimestamp() + rep.getTimeoutMillis() + 1000) <= System.currentTimeMillis()) {
                 rep.release();
                 it.remove();
@@ -397,7 +397,7 @@ public abstract class NettyRemotingAbstract {
             }
         }
 
-        for (ResponseFuture rf : rfList) {
+        for (ResponseFuture rf : rfList) { /* 执行 请求超时 回调 - 例如 继续拉取消息 */
             try {
                 executeInvokeCallback(rf);
             } catch (Throwable e) {
