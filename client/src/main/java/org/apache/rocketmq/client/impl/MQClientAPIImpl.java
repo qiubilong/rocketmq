@@ -727,10 +727,10 @@ public class MQClientAPIImpl {
                 assert false;
                 return null;
             case ASYNC:
-                this.pullMessageAsync(addr, request, timeoutMillis, pullCallback);
+                this.pullMessageAsync(addr, request, timeoutMillis, pullCallback);/* 异步拉取消息 */
                 return null;
             case SYNC:
-                return this.pullMessageSync(addr, request, timeoutMillis); /* 同步拉取消息 */
+                return this.pullMessageSync(addr, request, timeoutMillis);
             default:
                 assert false;
                 break;
@@ -760,7 +760,7 @@ public class MQClientAPIImpl {
                 } else {
                     if (!responseFuture.isSendRequestOK()) {
                         pullCallback.onException(new MQClientException("send request failed to " + addr + ". Request: " + request, responseFuture.getCause()));
-                    } else if (responseFuture.isTimeout()) {
+                    } else if (responseFuture.isTimeout()) { /* 请求超时，继续拉取消息 */
                         pullCallback.onException(new MQClientException("wait response from " + addr + " timeout :" + responseFuture.getTimeoutMillis() + "ms" + ". Request: " + request,
                             responseFuture.getCause()));
                     } else {

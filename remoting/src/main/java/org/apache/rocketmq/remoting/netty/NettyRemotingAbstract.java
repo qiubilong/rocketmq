@@ -62,12 +62,12 @@ public abstract class NettyRemotingAbstract {
     /**
      * Semaphore to limit maximum number of on-going one-way requests, which protects system memory footprint.
      */
-    protected final Semaphore semaphoreOneway;
+    protected final Semaphore semaphoreOneway; /* 限流 - 65535 */
 
     /**
      * Semaphore to limit maximum number of on-going asynchronous requests, which protects system memory footprint.
      */
-    protected final Semaphore semaphoreAsync;
+    protected final Semaphore semaphoreAsync; /* 限流 - 65535 */
 
     /**
      * This map caches all on-going requests.
@@ -158,7 +158,7 @@ public abstract class NettyRemotingAbstract {
                     processRequestCommand(ctx, cmd);   /* 处理请求 */
                     break;
                 case RESPONSE_COMMAND:
-                    processResponseCommand(ctx, cmd); /* 处理结果 */
+                    processResponseCommand(ctx, cmd); /* 处理响应结果，唤醒阻塞线程 */
                     break;
                 default:
                     break;
@@ -290,14 +290,14 @@ public abstract class NettyRemotingAbstract {
         final int opaque = cmd.getOpaque();
         final ResponseFuture responseFuture = responseTable.get(opaque);
         if (responseFuture != null) {
-            responseFuture.setResponseCommand(cmd);
+            responseFuture.setResponseCommand(cmd);/* 设置请求处理结果 */
 
             responseTable.remove(opaque);
 
             if (responseFuture.getInvokeCallback() != null) {
-                executeInvokeCallback(responseFuture);
+                executeInvokeCallback(responseFuture);/* 执行异步回调 */
             } else {
-                responseFuture.putResponse(cmd);
+                responseFuture.putResponse(cmd);   /* 唤醒请求阻塞线程 */
                 responseFuture.release();
             }
         } else {
@@ -388,7 +388,7 @@ public abstract class NettyRemotingAbstract {
         while (it.hasNext()) {
             Entry<Integer, ResponseFuture> next = it.next();
             ResponseFuture rep = next.getValue();
-
+            /* 删除超时请求 */
             if ((rep.getBeginTimestamp() + rep.getTimeoutMillis() + 1000) <= System.currentTimeMillis()) {
                 rep.release();
                 it.remove();
@@ -397,7 +397,7 @@ public abstract class NettyRemotingAbstract {
             }
         }
 
-        for (ResponseFuture rf : rfList) {
+        for (ResponseFuture rf : rfList) { /* 执行 请求超时 回调 - 例如 继续拉取消息 */
             try {
                 executeInvokeCallback(rf);
             } catch (Throwable e) {
@@ -431,7 +431,7 @@ public abstract class NettyRemotingAbstract {
                     log.warn("send a request command to channel <" + addr + "> failed.");
                 }
             });
-            /* 3、等待异步结果 */
+            /* 3、限时等待异步结果 */
             RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);
             if (null == responseCommand) {
                 if (responseFuture.isSendRequestOK()) {

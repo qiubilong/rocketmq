@@ -98,12 +98,12 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 @Override
                 public void run() {
                     try {
-                        ConsumeMessageOrderlyService.this.lockMQPeriodically();
+                        ConsumeMessageOrderlyService.this.lockMQPeriodically();/* 定时 续约 消息队列锁 */
                     } catch (Throwable e) {
                         log.error("scheduleAtFixedRate lockMQPeriodically exception", e);
                     }
                 }
-            }, 1000 * 1, ProcessQueue.REBALANCE_LOCK_INTERVAL, TimeUnit.MILLISECONDS);
+            }, 1000 * 1, ProcessQueue.REBALANCE_LOCK_INTERVAL, TimeUnit.MILLISECONDS);//20s
         }
     }
 
