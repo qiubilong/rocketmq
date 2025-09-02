@@ -27,7 +27,7 @@ import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
 @ChannelHandler.Sharable
-public class NettyEncoder extends MessageToByteEncoder<RemotingCommand> {
+public class NettyEncoder extends MessageToByteEncoder<RemotingCommand> {//outBound
     private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
 
     @Override

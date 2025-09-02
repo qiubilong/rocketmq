@@ -83,7 +83,7 @@ public class NamesrvController { /* Topic路由注册中心 - 存储broker和top
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
 
         this.registerProcessor(); /* 注册请求处理器 */
-                                                                                                 /* 定时移除掉线的Broker节点  */
+                                                                                                 /* 定时移除掉线的Broker节点（活跃超过2分钟）  */
         this.scheduledExecutorService.scheduleAtFixedRate(NamesrvController.this.routeInfoManager::scanNotActiveBroker, 5, 10, TimeUnit.SECONDS);
 
         this.scheduledExecutorService.scheduleAtFixedRate(NamesrvController.this.kvConfigManager::printAllPeriodically, 1, 10, TimeUnit.MINUTES);

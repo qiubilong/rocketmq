@@ -155,12 +155,12 @@ public class RemotingCommand { /* 通讯报文 */
     public static RemotingCommand decode(final ByteBuffer byteBuffer) throws RemotingCommandException {
         return decode(Unpooled.wrappedBuffer(byteBuffer));
     }
-
+    // 4字节（头部内容长度） + 头部内容 + body内容
     public static RemotingCommand decode(final ByteBuf byteBuffer) throws RemotingCommandException {
         int length = byteBuffer.readableBytes();//整个报文总长度
         int oriHeaderLen = byteBuffer.readInt();//headSize
         int headerLength = getHeaderLength(oriHeaderLen);
-        if (headerLength > length - 4) {
+        if (headerLength > length - 4) { // length-4后 就是 header内容 + body内容
             throw new RemotingCommandException("decode error, bad header length: " + headerLength);
         }
 
@@ -443,7 +443,7 @@ public class RemotingCommand { /* 通讯报文 */
             headerSize = header.length;
             out.writeBytes(header);/* 头部内容 */
         }
-        out.setInt(beginIndex, 4 + headerSize + bodySize);/* 报文总大小 = header大小 + header内容大小 + body内容大小  */
+        out.setInt(beginIndex, 4 + headerSize + bodySize);/* 报文总大小 = 4字节(headerSize, serializeTypeCurrentRPC） + header内容大小 + body内容大小  */
         out.setInt(beginIndex + 4, markProtocolType(headerSize, serializeTypeCurrentRPC));/* 低24位存储头部大小 */
     }
 

@@ -183,7 +183,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     @Override
     public void start() {
         this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(//业务线程池
-            nettyServerConfig.getServerWorkerThreads(),
+            nettyServerConfig.getServerWorkerThreads(),//8
             new ThreadFactory() {
 
                 private AtomicInteger threadIndex = new AtomicInteger(0);
@@ -210,8 +210,8 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                         ch.pipeline()
                             .addLast(defaultEventExecutorGroup, HANDSHAKE_HANDLER_NAME, handshakeHandler)
                             .addLast(defaultEventExecutorGroup,
-                                encoder,
-                                new NettyDecoder(),
+                                encoder,//outBound
+                                new NettyDecoder(),//inBound
                                 new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()),  /* 空闲检测 120s */
                                 connectionManageHandler,    /* 维护在线可用的Broker */
                                 serverHandler               /* 处理客户端请求 */

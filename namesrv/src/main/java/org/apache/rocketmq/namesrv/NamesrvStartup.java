@@ -40,7 +40,7 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.srvutil.ServerUtil;
 import org.apache.rocketmq.srvutil.ShutdownHookThread;
 import org.slf4j.LoggerFactory;
-
+/* 名字服务器 - 是一个简单的topic路由注册中心，支持topic、broker的动态注册与发现 */
 public class NamesrvStartup {
 
     private static InternalLogger log;
