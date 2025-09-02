@@ -65,7 +65,7 @@ public class NamesrvController { /* Topic路由注册中心 - 存储broker和top
         this.nettyServerConfig = nettyServerConfig;
         this.kvConfigManager = new KVConfigManager(this);
         this.routeInfoManager = new RouteInfoManager(); /* Topic路由注册中心 */
-        this.brokerHousekeepingService = new BrokerHousekeepingService(this);
+        this.brokerHousekeepingService = new BrokerHousekeepingService(this);/* channel关闭事件 */
         this.configuration = new Configuration(
             log,
             this.namesrvConfig, this.nettyServerConfig
