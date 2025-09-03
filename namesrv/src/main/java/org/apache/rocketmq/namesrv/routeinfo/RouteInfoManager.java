@@ -55,7 +55,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
     private final static long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;//2分钟
     private final ReadWriteLock lock = new ReentrantReadWriteLock();//更新数据读写锁
     private final HashMap<String/* topic */, Map<String /* brokerName */ , QueueData>> topicQueueTable; /* topic分区信息 */
-    private final HashMap<String/** brokerName */, BrokerData> brokerAddrTable;
+    private final HashMap<String/** brokerName */, BrokerData> brokerAddrTable;  /* broker地址 */
     private final HashMap<String/** clusterName */, Set<String/** brokerName */>> clusterAddrTable;
     private final HashMap<String/** brokerAddr */, BrokerLiveInfo> brokerLiveTable;  /* 在线可用的Broker */
     private final HashMap<String/** brokerAddr */, List<String>/** Filter Server */> filterServerTable;
@@ -157,7 +157,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
                 BrokerData brokerData = this.brokerAddrTable.get(brokerName);
                 if (null == brokerData) {
                     registerFirst = true;
-                    brokerData = new BrokerData(clusterName, brokerName, new HashMap<>()); /* Broker信息  - 名字相同多台机器 */
+                    brokerData = new BrokerData(clusterName, brokerName, new HashMap<>()); /* brokerName分组  - 名字相同多台机器 */
                     this.brokerAddrTable.put(brokerName, brokerData);
                 }
                 Map<Long, String> brokerAddrsMap = brokerData.getBrokerAddrs();
@@ -188,7 +188,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
                                 topicConfigWrapper.getTopicConfigTable();
                         if (tcTable != null) {
                             for (Map.Entry<String, TopicConfig> entry : tcTable.entrySet()) {
-                                this.createAndUpdateQueueData(brokerName, entry.getValue()); /* 注册 Topic信息 */
+                                this.createAndUpdateQueueData(brokerName, entry.getValue()); /* 主节点注册 Topic信息 */
                             }
                         }
                     }
@@ -251,7 +251,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
             prev.setLastUpdateTimestamp(timeStamp);
         }
     }
-
+    /* topic消息队列配置 */
     private void createAndUpdateQueueData(final String brokerName, final TopicConfig topicConfig) {
         QueueData queueData = new QueueData();
         queueData.setBrokerName(brokerName);
@@ -425,7 +425,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
                     topicRouteData.setQueueDatas(new ArrayList<>(queueDataMap.values()));/* topic - 消息队列 列表 */
                     foundQueueData = true;
 
-                    brokerNameSet.addAll(queueDataMap.keySet()); /* topic - broker列表 */
+                    brokerNameSet.addAll(queueDataMap.keySet()); /* topic - master broker列表，因为只有主节点才注册topic分区信息 */
 
                     for (String brokerName : brokerNameSet) {
                         BrokerData brokerData = this.brokerAddrTable.get(brokerName);
