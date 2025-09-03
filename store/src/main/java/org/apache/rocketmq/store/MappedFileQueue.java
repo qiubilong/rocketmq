@@ -166,9 +166,9 @@ public class MappedFileQueue {
                 return false;
             }
 
-            try {
+            try { /* 创建 内存映射文件 */
                 MappedFile mappedFile = new MappedFile(file.getPath(), mappedFileSize);
-
+                 /* 初始化 内存映射文件读写位置 */
                 mappedFile.setWrotePosition(this.mappedFileSize);
                 mappedFile.setFlushedPosition(this.mappedFileSize);
                 mappedFile.setCommittedPosition(this.mappedFileSize);
@@ -209,7 +209,7 @@ public class MappedFileQueue {
             createOffset = mappedFileLast.getFileFromOffset() + this.mappedFileSize;
         }
 
-        if (createOffset != -1 && needCreate) {
+        if (createOffset != -1 && needCreate) { /* 文件写满，创建新文件，文件名是 上个文件偏移 + 固定文件大小 */
             return tryCreateMappedFile(createOffset);
         }
 

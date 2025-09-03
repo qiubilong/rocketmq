@@ -133,10 +133,10 @@ public abstract class ServiceThread implements Runnable {
         }
 
         //entry to wait
-        waitPoint.reset();
+        waitPoint.reset();/* 恢复  CountDownLatch2.state = 1 */
 
         try {
-            waitPoint.await(interval, TimeUnit.MILLISECONDS);
+            waitPoint.await(interval, TimeUnit.MILLISECONDS); /* CountDownLatch2 限时等待，或者countDown()唤醒 */
         } catch (InterruptedException e) {
             log.error("Interrupted", e);
         } finally {

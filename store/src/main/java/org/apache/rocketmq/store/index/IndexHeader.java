@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IndexHeader {
-    public static final int INDEX_HEADER_SIZE = 40;
+    public static final int INDEX_HEADER_SIZE = 40; /* 索引文件头 40字节 */
     private static int beginTimestampIndex = 0;
     private static int endTimestampIndex = 8;
     private static int beginPhyoffsetIndex = 16;
@@ -29,7 +29,7 @@ public class IndexHeader {
     private static int hashSlotcountIndex = 32;
     private static int indexCountIndex = 36;
     private final ByteBuffer byteBuffer;
-    private final AtomicLong beginTimestamp = new AtomicLong(0);
+    private final AtomicLong beginTimestamp = new AtomicLong(0); /* 消息索引 - 最大最小时间 - 按时间查找 */
     private final AtomicLong endTimestamp = new AtomicLong(0);
     private final AtomicLong beginPhyOffset = new AtomicLong(0);
     private final AtomicLong endPhyOffset = new AtomicLong(0);

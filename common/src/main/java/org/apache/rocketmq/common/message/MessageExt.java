@@ -29,7 +29,7 @@ public class MessageExt extends Message {
 
     private String brokerName;
 
-    private int queueId;         /* 消息分区Id */
+    private int queueId;         /* 消息目标分区Id */
 
     private int storeSize;
 
@@ -41,7 +41,7 @@ public class MessageExt extends Message {
     private long storeTimestamp;
     private SocketAddress storeHost;//存储者信息
     private String msgId;         /* 消息ID */
-    private long commitLogOffset; /* 消息偏移量 */
+    private long commitLogOffset; /* 消息存储偏移量 */
     private int bodyCRC;
     private int reconsumeTimes;
 

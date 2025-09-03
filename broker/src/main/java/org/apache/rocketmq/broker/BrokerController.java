@@ -126,7 +126,7 @@ public class BrokerController {
     private final ProducerManager producerManager;
     private final ClientHousekeepingService clientHousekeepingService;
     private final PullMessageProcessor pullMessageProcessor; /* 拉取消息处理器 */
-    private final PullRequestHoldService pullRequestHoldService;
+    private final PullRequestHoldService pullRequestHoldService;/* 拉取消息长轮训服务 */
     private final MessageArrivingListener messageArrivingListener;
     private final Broker2Client broker2Client;
     private final SubscriptionGroupManager subscriptionGroupManager;
@@ -136,15 +136,15 @@ public class BrokerController {
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "BrokerControllerScheduledThread"));
     private final SlaveSynchronize slaveSynchronize;
-    private final BlockingQueue<Runnable> sendThreadPoolQueue;
+    private final BlockingQueue<Runnable> sendThreadPoolQueue;//10000 - 存储消息
     private final BlockingQueue<Runnable> putThreadPoolQueue;
-    private final BlockingQueue<Runnable> pullThreadPoolQueue;
+    private final BlockingQueue<Runnable> pullThreadPoolQueue;//10 0000 - 拉取消息
     private final BlockingQueue<Runnable> replyThreadPoolQueue;
     private final BlockingQueue<Runnable> queryThreadPoolQueue;
     private final BlockingQueue<Runnable> clientManagerThreadPoolQueue;
     private final BlockingQueue<Runnable> heartbeatThreadPoolQueue;
     private final BlockingQueue<Runnable> consumerManagerThreadPoolQueue;
-    private final BlockingQueue<Runnable> endTransactionThreadPoolQueue;
+    private final BlockingQueue<Runnable> endTransactionThreadPoolQueue;//10 0000 - 半事务消息确认
     private final FilterServerManager filterServerManager;
     private final BrokerStatsManager brokerStatsManager;
     private final List<SendMessageHook> sendMessageHookList = new ArrayList<SendMessageHook>();
@@ -156,21 +156,21 @@ public class BrokerController {
     private RemotingServer remotingServer; /* ## Broker Netty服务器 - NettyRemotingServer */
     private RemotingServer fastRemotingServer;
     private TopicConfigManager topicConfigManager;
-    private ExecutorService sendMessageExecutor;//存储消息
+    private ExecutorService sendMessageExecutor;//存储消息 - 异步线程池
     private ExecutorService putMessageFutureExecutor;
-    private ExecutorService pullMessageExecutor;//拉取消息
+    private ExecutorService pullMessageExecutor;//拉取消息 - 异步线程池
     private ExecutorService replyMessageExecutor;
     private ExecutorService queryMessageExecutor;
     private ExecutorService adminBrokerExecutor;
     private ExecutorService clientManageExecutor;
     private ExecutorService heartbeatExecutor;
     private ExecutorService consumerManageExecutor;//消费偏移
-    private ExecutorService endTransactionExecutor;//事务确认
+    private ExecutorService endTransactionExecutor;//事务确认 - 异步线程池
     private boolean updateMasterHAServerAddrPeriodically = false;
     private BrokerStats brokerStats;
     private InetSocketAddress storeHost;
     private FileWatchService fileWatchService;
-    private TransactionalMessageCheckService transactionalMessageCheckService;
+    private TransactionalMessageCheckService transactionalMessageCheckService; /* 半事务消息回查 - 工作线程 */
     private TransactionalMessageService transactionalMessageService;
     private AbstractTransactionalMessageCheckListener transactionalMessageCheckListener;
     private Future<?> slaveSyncFuture;
@@ -202,15 +202,15 @@ public class BrokerController {
 
         this.slaveSynchronize = new SlaveSynchronize(this);
 
-        this.sendThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getSendThreadPoolQueueCapacity());//10000
+        this.sendThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getSendThreadPoolQueueCapacity());//10000 - 存储消息
         this.putThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getPutThreadPoolQueueCapacity());
-        this.pullThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getPullThreadPoolQueueCapacity());//100000
+        this.pullThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getPullThreadPoolQueueCapacity());//10 0000 - 拉取消息
         this.replyThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getReplyThreadPoolQueueCapacity());
-        this.queryThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getQueryThreadPoolQueueCapacity());//1000000
+        this.queryThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getQueryThreadPoolQueueCapacity());//20000
         this.clientManagerThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getClientManagerThreadPoolQueueCapacity());
         this.consumerManagerThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getConsumerManagerThreadPoolQueueCapacity());
         this.heartbeatThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getHeartbeatThreadPoolQueueCapacity());
-        this.endTransactionThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getEndTransactionPoolQueueCapacity());
+        this.endTransactionThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getEndTransactionPoolQueueCapacity());//10 0000 - 半事务消息确认
 
         this.brokerStatsManager = messageStoreConfig.isEnableLmq() ? new LmqBrokerStatsManager(this.brokerConfig.getBrokerClusterName(), this.brokerConfig.isEnableDetailStat()) : new BrokerStatsManager(this.brokerConfig.getBrokerClusterName(), this.brokerConfig.isEnableDetailStat());
 
@@ -274,7 +274,7 @@ public class BrokerController {
             NettyServerConfig fastConfig = (NettyServerConfig) this.nettyServerConfig.clone();
             fastConfig.setListenPort(nettyServerConfig.getListenPort() - 2);
             this.fastRemotingServer = new NettyRemotingServer(fastConfig, this.clientHousekeepingService);
-            this.sendMessageExecutor = new BrokerFixedThreadPoolExecutor(//存储消息线程池
+            this.sendMessageExecutor = new BrokerFixedThreadPoolExecutor(//存储消息 - 异步线程池
                 this.brokerConfig.getSendMessageThreadPoolNums(),//Math.min(Runtime.getRuntime().availableProcessors(), 4)
                 this.brokerConfig.getSendMessageThreadPoolNums(),
                 1000 * 60,
@@ -290,7 +290,7 @@ public class BrokerController {
                 this.putThreadPoolQueue,
                 new ThreadFactoryImpl("PutMessageThread_"));
 
-            this.pullMessageExecutor = new BrokerFixedThreadPoolExecutor( //拉取消息
+            this.pullMessageExecutor = new BrokerFixedThreadPoolExecutor( //拉取消息 - 异步线程池
                 this.brokerConfig.getPullMessageThreadPoolNums(),//16 + Runtime.getRuntime().availableProcessors() * 2;
                 this.brokerConfig.getPullMessageThreadPoolNums(),
                 1000 * 60,
@@ -334,7 +334,7 @@ public class BrokerController {
                 this.heartbeatThreadPoolQueue,
                 new ThreadFactoryImpl("HeartbeatThread_", true));
 
-            this.endTransactionExecutor = new BrokerFixedThreadPoolExecutor(//事务确认
+            this.endTransactionExecutor = new BrokerFixedThreadPoolExecutor(//事务确认 - 异步线程池
                 this.brokerConfig.getEndTransactionThreadPoolNums(),
                 this.brokerConfig.getEndTransactionThreadPoolNums(),//Math.max(8 + Runtime.getRuntime().availableProcessors() * 2
                 1000 * 60,
@@ -563,7 +563,7 @@ public class BrokerController {
         this.remotingServer.registerProcessor(RequestCode.PULL_MESSAGE, this.pullMessageProcessor, this.pullMessageExecutor);
         this.pullMessageProcessor.registerConsumeMessageHook(consumeMessageHookList);
 
-        /*
+        /**
          * ReplyMessageProcessor
          */
         ReplyMessageProcessor replyMessageProcessor = new ReplyMessageProcessor(this);

@@ -43,13 +43,13 @@ public class IndexService {
     private final int hashSlotNum;
     private final int indexNum;
     private final String storePath;
-    private final ArrayList<IndexFile> indexFileList = new ArrayList<IndexFile>();/* 索引文件 */
+    private final ArrayList<IndexFile> indexFileList = new ArrayList<IndexFile>();/* 索引文件列表 */
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     public IndexService(final DefaultMessageStore store) {
         this.defaultMessageStore = store;
-        this.hashSlotNum = store.getMessageStoreConfig().getMaxHashSlotNum();//500 0000
-        this.indexNum = store.getMessageStoreConfig().getMaxIndexNum();//500 0000 * 4;
+        this.hashSlotNum = store.getMessageStoreConfig().getMaxHashSlotNum();/* 500W - 索引哈希槽 */
+        this.indexNum = store.getMessageStoreConfig().getMaxIndexNum();/* 2000W - 索引项 */
         this.storePath =
             StorePathConfigHelper.getStorePathIndex(store.getMessageStoreConfig().getStorePathRootDir());
     }

@@ -32,7 +32,7 @@ import org.apache.rocketmq.store.config.StorePathConfigHelper;
 public class ConsumeQueue {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    public static final int CQ_STORE_UNIT_SIZE = 20;
+    public static final int CQ_STORE_UNIT_SIZE = 20;//每项20字节
     private static final InternalLogger LOG_ERROR = InternalLoggerFactory.getLogger(LoggerName.STORE_ERROR_LOGGER_NAME);
 
     private final DefaultMessageStore defaultMessageStore;
@@ -44,7 +44,7 @@ public class ConsumeQueue {
 
     private final String storePath;
     private final int mappedFileSize;
-    private long maxPhysicOffset = -1;
+    private long maxPhysicOffset = -1;/* 构建索引的最大commitLog存储偏移 */
     private volatile long minLogicOffset = 0;
     private ConsumeQueueExt consumeQueueExt = null;
 
@@ -64,7 +64,7 @@ public class ConsumeQueue {
         String queueDir = this.storePath
             + File.separator + topic
             + File.separator + queueId;
-
+        /* 创建 消费消息队列 内存映射文件 */
         this.mappedFileQueue = new MappedFileQueue(queueDir, mappedFileSize, null);
 
         this.byteBufferIndex = ByteBuffer.allocate(CQ_STORE_UNIT_SIZE);
@@ -93,7 +93,7 @@ public class ConsumeQueue {
         final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
         if (!mappedFiles.isEmpty()) {
 
-            int index = mappedFiles.size() - 3;
+            int index = mappedFiles.size() - 3;//倒数第三个开始
             if (index < 0)
                 index = 0;
 
@@ -105,13 +105,13 @@ public class ConsumeQueue {
             long maxExtAddr = 1;
             while (true) {
                 for (int i = 0; i < mappedFileSizeLogics; i += CQ_STORE_UNIT_SIZE) {
-                    long offset = byteBuffer.getLong();
+                    long offset = byteBuffer.getLong(); /* 20字节为单位 遍历 */
                     int size = byteBuffer.getInt();
                     long tagsCode = byteBuffer.getLong();
 
                     if (offset >= 0 && size > 0) {
                         mappedFileOffset = i + CQ_STORE_UNIT_SIZE;
-                        this.maxPhysicOffset = offset + size;
+                        this.maxPhysicOffset = offset + size; /* 更新构建索引的最大commitLog存储偏移 */
                         if (isExtAddr(tagsCode)) {
                             maxExtAddr = tagsCode;
                         }
@@ -122,7 +122,7 @@ public class ConsumeQueue {
                     }
                 }
 
-                if (mappedFileOffset == mappedFileSizeLogics) {
+                if (mappedFileOffset == mappedFileSizeLogics) { /* 文件满，遍历下个文件 */
                     index++;
                     if (index >= mappedFiles.size()) {
 
@@ -142,7 +142,7 @@ public class ConsumeQueue {
                     break;
                 }
             }
-
+            /* 更新 消费索引文件 读写偏移 */
             processOffset += mappedFileOffset;
             this.mappedFileQueue.setFlushedWhere(processOffset);
             this.mappedFileQueue.setCommittedWhere(processOffset);
@@ -386,7 +386,7 @@ public class ConsumeQueue {
         boolean canWrite = this.defaultMessageStore.getRunningFlags().isCQWriteable();
         for (int i = 0; i < maxRetries && canWrite; i++) {
             long tagsCode = request.getTagsCode();
-            if (isExtWriteEnable()) {
+            if (isExtWriteEnable()) {//false
                 ConsumeQueueExt.CqExtUnit cqExtUnit = new ConsumeQueueExt.CqExtUnit();
                 cqExtUnit.setFilterBitMap(request.getBitMap());
                 cqExtUnit.setMsgStoreTime(request.getStoreTimestamp());
@@ -400,7 +400,7 @@ public class ConsumeQueue {
                         topic, queueId, request.getCommitLogOffset());
                 }
             }
-            boolean result = this.putMessagePositionInfo(request.getCommitLogOffset(),
+            boolean result = this.putMessagePositionInfo(request.getCommitLogOffset(), /* 构建 消息消费队列索引 */
                 request.getMsgSize(), tagsCode, request.getConsumeQueueOffset());
             if (result) {
                 if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE ||
@@ -478,18 +478,18 @@ public class ConsumeQueue {
     private boolean putMessagePositionInfo(final long offset, final int size, final long tagsCode,
         final long cqOffset) {
 
-        if (offset + size <= this.maxPhysicOffset) {
+        if (offset + size <= this.maxPhysicOffset) {/* 重复操作 */
             log.warn("Maybe try to build consume queue repeatedly maxPhysicOffset={} phyOffset={}", maxPhysicOffset, offset);
             return true;
         }
 
         this.byteBufferIndex.flip();
         this.byteBufferIndex.limit(CQ_STORE_UNIT_SIZE);
-        this.byteBufferIndex.putLong(offset);
-        this.byteBufferIndex.putInt(size);
-        this.byteBufferIndex.putLong(tagsCode);
+        this.byteBufferIndex.putLong(offset); //commitLogOffset
+        this.byteBufferIndex.putInt(size);    //msgSize
+        this.byteBufferIndex.putLong(tagsCode);//消息标签
 
-        final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
+        final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;/* cqOffset是队列消息逻辑数 */
 
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
         if (mappedFile != null) {
@@ -504,7 +504,7 @@ public class ConsumeQueue {
             }
 
             if (cqOffset != 0) {
-                long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getFileFromOffset();
+                long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getFileFromOffset();//当前文件的逻辑偏移
 
                 if (expectLogicOffset < currentLogicOffset) {
                     log.warn("Build  consume queue repeatedly, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
@@ -523,7 +523,7 @@ public class ConsumeQueue {
                     );
                 }
             }
-            this.maxPhysicOffset = offset + size;
+            this.maxPhysicOffset = offset + size; /* 更新 构建索引进度 */
             return mappedFile.appendMessage(this.byteBufferIndex.array());
         }
         return false;

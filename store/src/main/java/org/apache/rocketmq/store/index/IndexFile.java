@@ -27,8 +27,8 @@ import org.apache.rocketmq.store.MappedFile;
 
 public class IndexFile {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private static int hashSlotSize = 4;
-    private static int indexSize = 20;
+    private static int hashSlotSize = 4; /* 一个hash槽 4个字节 */
+    private static int indexSize = 20; /* 一个索引项 20字节 */
     private static int invalidIndex = 0;
     private final int hashSlotNum;
     private final int indexNum;
@@ -39,7 +39,7 @@ public class IndexFile {
     public IndexFile(final String fileName, final int hashSlotNum, final int indexNum,
         final long endPhyOffset, final long endTimestamp) throws IOException {
         int fileTotalSize =
-            IndexHeader.INDEX_HEADER_SIZE + (hashSlotNum * hashSlotSize) + (indexNum * indexSize);
+            IndexHeader.INDEX_HEADER_SIZE + (hashSlotNum * hashSlotSize) + (indexNum * indexSize);/* 计算索引文件大小 */
         this.mappedFile = new MappedFile(fileName, fileTotalSize);
         this.mappedByteBuffer = this.mappedFile.getMappedByteBuffer();
         this.hashSlotNum = hashSlotNum;

@@ -50,20 +50,20 @@ public class MappedFile extends ReferenceResource {
     private static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
 
     private static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
-    protected final AtomicInteger wrotePosition = new AtomicInteger(0);     /* 最新写缓存位置 */
+    protected final AtomicInteger wrotePosition = new AtomicInteger(0);     /* 最新写缓存位置 - 字节数 */
     protected final AtomicInteger committedPosition = new AtomicInteger(0); /* 上次写入位置 */
     private final AtomicInteger flushedPosition = new AtomicInteger(0); /* 刷盘位置 */
     protected int fileSize;
-    protected FileChannel fileChannel; /* 内存映射文件 */
+    protected FileChannel fileChannel; /* 内存映射文件 - new RandomAccessFile(this.file, "rw").getChannel() */
     /**
      * Message will put to here first, and then reput to FileChannel if writeBuffer is not null.
      */
-    protected ByteBuffer writeBuffer = null; /* 存储消息 - 写缓冲区 */
+    protected ByteBuffer writeBuffer = null;
     protected TransientStorePool transientStorePool = null;
     private String fileName;
-    private long fileFromOffset;
+    private long fileFromOffset;//消息最小偏移，就是文件名
     private File file;
-    private MappedByteBuffer mappedByteBuffer;/* 内存映射文件 - 缓冲区 */
+    private MappedByteBuffer mappedByteBuffer;/* 内存映射文件 - 缓冲区 - fileChannel.map(MapMode.READ_WRITE, 0, fileSize) */
     private volatile long storeTimestamp = 0;
     private boolean firstCreateInQueue = false;
 
@@ -169,7 +169,7 @@ public class MappedFile extends ReferenceResource {
         ensureDirOK(this.file.getParent());
 
         try {
-            this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel();
+            this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel(); /* 创建内存映射文件 */
             this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
             TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
             TOTAL_MAPPED_FILES.incrementAndGet();
@@ -252,7 +252,7 @@ public class MappedFile extends ReferenceResource {
             } catch (Throwable e) {
                 log.error("Error occurred when append message to mappedFile.", e);
             }
-            this.wrotePosition.addAndGet(data.length);
+            this.wrotePosition.addAndGet(data.length);/* 更新写偏移 */
             return true;
         }
 

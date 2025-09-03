@@ -78,7 +78,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
     // CommitLog
     private final CommitLog commitLog; /* 消息存储文件 */
 
-    private final ConcurrentMap<String/* topic */, ConcurrentMap<Integer/* queueId */, ConsumeQueue>> consumeQueueTable;
+    private final ConcurrentMap<String/* topic */, ConcurrentMap<Integer/* queueId */, ConsumeQueue>> consumeQueueTable; /* topic的消费队列文件 */
 
     private final FlushConsumeQueueService flushConsumeQueueService;
 
@@ -142,17 +142,17 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         }
         this.consumeQueueTable = new ConcurrentHashMap<>(32);
 
-        this.flushConsumeQueueService = new FlushConsumeQueueService();/* 消费offset索引刷盘 - 工作线程 */
+        this.flushConsumeQueueService = new FlushConsumeQueueService();/* 消费队列索引 -  刷盘工作线程 */
         this.cleanCommitLogService = new CleanCommitLogService();/* 删除过期文件 */
         this.cleanConsumeQueueService = new CleanConsumeQueueService();
         this.storeStatsService = new StoreStatsService();
-        this.indexService = new IndexService(this);
+        this.indexService = new IndexService(this);/* 消息key索引服务 */
         if (!messageStoreConfig.isEnableDLegerCommitLog()) {
             this.haService = new HAService(this);
         } else {
             this.haService = null;
         }
-        this.reputMessageService = new ReputMessageService(); /* ## 消息offset和key索引 - 构建线程 */
+        this.reputMessageService = new ReputMessageService(); /* ## 消息 消费队列索引 和 key索引 - 构建线程 */
 
         this.scheduleMessageService = new ScheduleMessageService(this);
 
@@ -167,8 +167,8 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         this.indexService.start();
 
         this.dispatcherList = new LinkedList<>();
-        this.dispatcherList.addLast(new CommitLogDispatcherBuildConsumeQueue());/* 重构-  消息消费offset索引 */
-        this.dispatcherList.addLast(new CommitLogDispatcherBuildIndex());      /*  重构- 消息key索引 */
+        this.dispatcherList.addLast(new CommitLogDispatcherBuildConsumeQueue());/* 重构-  消息 消费队列索引 */
+        this.dispatcherList.addLast(new CommitLogDispatcherBuildIndex());      /*  重构- 消息 key索引 */
 
         File file = new File(StorePathConfigHelper.getLockFile(messageStoreConfig.getStorePathRootDir()));
         MappedFile.ensureDirOK(file.getParent());
@@ -1383,7 +1383,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         File file = new File(fileName);
         return file.exists();
     }
-
+    /* 加载 所有topic的 所有 消息队列 */
     private boolean loadConsumeQueue() {     /* C:\myGit\rocketmq\data\consumequeue */
         File dirLogic = new File(StorePathConfigHelper.getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()));
         File[] fileTopicList = dirLogic.listFiles();
@@ -1524,11 +1524,11 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
 
     public void putMessagePositionInfo(DispatchRequest dispatchRequest) {
         ConsumeQueue cq = this.findConsumeQueue(dispatchRequest.getTopic(), dispatchRequest.getQueueId());
-        cq.putMessagePositionInfoWrapper(dispatchRequest, checkMultiDispatchQueue(dispatchRequest));
+        cq.putMessagePositionInfoWrapper(dispatchRequest, checkMultiDispatchQueue(dispatchRequest));/* 构建 消息队列索引 */
     }
 
     private boolean checkMultiDispatchQueue(DispatchRequest dispatchRequest) {
-        if (!this.messageStoreConfig.isEnableMultiDispatch()) {
+        if (!this.messageStoreConfig.isEnableMultiDispatch()) {//enableMultiDispatch=false
             return false;
         }
         Map<String, String> prop = dispatchRequest.getPropertiesMap();
@@ -1623,7 +1623,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
             switch (tranType) {
                 case MessageSysFlag.TRANSACTION_NOT_TYPE:
                 case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
-                    DefaultMessageStore.this.putMessagePositionInfo(request);
+                    DefaultMessageStore.this.putMessagePositionInfo(request); /* 构建 消息队列索引 */
                     break;
                 case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
                 case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE:

@@ -115,7 +115,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             }
         });
 
-        if (useEpoll()) {
+        if (useEpoll()) {                                    // 一个线程就够
             this.eventLoopGroupBoss = new EpollEventLoopGroup(1, new ThreadFactory() {   /* 处理客户端 - 连接 */
                 private AtomicInteger threadIndex = new AtomicInteger(0);
 

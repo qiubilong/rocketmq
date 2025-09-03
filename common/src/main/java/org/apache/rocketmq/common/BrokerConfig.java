@@ -59,9 +59,9 @@ public class BrokerConfig {
     /**
      * thread numbers for send message thread pool.
      */
-    private int sendMessageThreadPoolNums = Math.min(Runtime.getRuntime().availableProcessors(), 4);
+    private int sendMessageThreadPoolNums = Math.min(Runtime.getRuntime().availableProcessors(), 4);//存储消息
     private int putMessageFutureThreadPoolNums = Math.min(Runtime.getRuntime().availableProcessors(), 4);
-    private int pullMessageThreadPoolNums = 16 + Runtime.getRuntime().availableProcessors() * 2;
+    private int pullMessageThreadPoolNums = 16 + Runtime.getRuntime().availableProcessors() * 2;    //拉取消息
     private int processReplyMessageThreadPoolNums = 16 + Runtime.getRuntime().availableProcessors() * 2;
     private int queryMessageThreadPoolNums = 8 + Runtime.getRuntime().availableProcessors();
 
@@ -73,10 +73,10 @@ public class BrokerConfig {
     /**
      * Thread numbers for EndTransactionProcessor
      */
-    private int endTransactionThreadPoolNums = Math.max(8 + Runtime.getRuntime().availableProcessors() * 2,
+    private int endTransactionThreadPoolNums = Math.max(8 + Runtime.getRuntime().availableProcessors() * 2,//半事务消息确认
             sendMessageThreadPoolNums * 4);
 
-    private int flushConsumerOffsetInterval = 1000 * 5;
+    private int flushConsumerOffsetInterval = 1000 * 5;/* 5s刷盘消费偏移 */
 
     private int flushConsumerOffsetHistoryInterval = 1000 * 60;
 
@@ -84,15 +84,15 @@ public class BrokerConfig {
     private boolean rejectTransactionMessage = false;
     @ImportantField
     private boolean fetchNamesrvAddrByAddressServer = false;
-    private int sendThreadPoolQueueCapacity = 10000;
+    private int sendThreadPoolQueueCapacity = 10000;//存储消息
     private int putThreadPoolQueueCapacity = 10000;
-    private int pullThreadPoolQueueCapacity = 100000;
+    private int pullThreadPoolQueueCapacity = 100000;//拉取消息
     private int replyThreadPoolQueueCapacity = 10000;
-    private int queryThreadPoolQueueCapacity = 20000;
+    private int queryThreadPoolQueueCapacity = 20000;//查询消息
     private int clientManagerThreadPoolQueueCapacity = 1000000;
     private int consumerManagerThreadPoolQueueCapacity = 1000000;
     private int heartbeatThreadPoolQueueCapacity = 50000;
-    private int endTransactionPoolQueueCapacity = 100000;
+    private int endTransactionPoolQueueCapacity = 100000;//半事务消息确认
 
     private int filterServerNums = 0;
 

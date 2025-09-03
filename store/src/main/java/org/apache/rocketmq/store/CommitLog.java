@@ -69,13 +69,13 @@ public class CommitLog {
 
     private final AppendMessageCallback appendMessageCallback;
     private final ThreadLocal<PutMessageThreadLocal> putMessageThreadLocal;
-    protected HashMap<String/* topic-queueid */, Long/* offset */> topicQueueTable = new HashMap<String, Long>(1024);
+    protected HashMap<String/* topic-queueid */, Long/* offset */> topicQueueTable = new HashMap<String, Long>(1024); /*  topic 消息队列写偏移 */
     protected Map<String/* topic-queueid */, Long/* offset */> lmqTopicQueueTable = new ConcurrentHashMap<>(1024);
     protected volatile long confirmOffset = -1L;
 
     private volatile long beginTimeInLock = 0;
 
-    protected final PutMessageLock putMessageLock; /* 存储消息全局锁 - PutMessageReentrantLock */
+    protected final PutMessageLock putMessageLock; /* 存储消息全局锁 - PutMessageReentrantLock - ReentrantLock */
 
     private volatile Set<String> fullStorePaths = Collections.emptySet();
 
@@ -88,7 +88,7 @@ public class CommitLog {
             this.mappedFileQueue = new MultiPathMappedFileQueue(defaultMessageStore.getMessageStoreConfig(),
                     defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
                     defaultMessageStore.getAllocateMappedFileService(), this::getFullStorePaths);
-        } else {   /* ## 创建 CommitLog 内存映射文件 */
+        } else {   /* ## 创建 CommitLog 内存映射文件列表 */
             this.mappedFileQueue = new MappedFileQueue(storePath,
                     defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
                     defaultMessageStore.getAllocateMappedFileService());
@@ -99,7 +99,7 @@ public class CommitLog {
         if (FlushDiskType.SYNC_FLUSH == defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
             this.flushCommitLogService = new GroupCommitService();   /* 同步刷盘策略  - 工作线程*/
         } else {
-            this.flushCommitLogService = new FlushRealTimeService(); /* 异步刷盘策略  - 工作线程 */
+            this.flushCommitLogService = new FlushRealTimeService(); /* 异步刷盘策略（500ms）  - 工作线程 */
         }
 
         this.commitLogService = new CommitRealTimeService();
@@ -1085,7 +1085,7 @@ public class CommitLog {
             CommitLog.log.info(this.getServiceName() + " service end");
         }
     }
-
+    /* 异步刷盘（500ms） */
     class FlushRealTimeService extends FlushCommitLogService {
         private long lastFlushTimestamp = 0;
         private long printTimes = 0;
@@ -1197,7 +1197,7 @@ public class CommitLog {
 
     /**
      * GroupCommit Service - （10ms）同步刷盘
-     */
+     */   /* 同步刷盘（10ms） */
     class GroupCommitService extends FlushCommitLogService {
         private volatile LinkedList<GroupCommitRequest> requestsWrite = new LinkedList<GroupCommitRequest>(); /* 刷盘请求异步队列 */
         private volatile LinkedList<GroupCommitRequest> requestsRead = new LinkedList<GroupCommitRequest>();
@@ -1398,7 +1398,7 @@ public class CommitLog {
                 case MessageSysFlag.TRANSACTION_NOT_TYPE:
                 case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
                     // The next update ConsumeQueue information
-                    CommitLog.this.topicQueueTable.put(key, ++queueOffset);
+                    CommitLog.this.topicQueueTable.put(key, ++queueOffset); /* 递增 消息队列偏移 */
                     CommitLog.this.multiDispatch.updateMultiQueueOffset(msgInner);
                     break;
                 default:

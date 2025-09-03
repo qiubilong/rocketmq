@@ -39,9 +39,9 @@ public class MessageStoreConfig {
     private String readOnlyCommitLogStorePaths = null;
 
     // CommitLog file size,default is 1G
-    private int mappedFileSizeCommitLog = 1024 * 1024 * 1024;
+    private int mappedFileSizeCommitLog = 1024 * 1024 * 1024; /* CommitLog 大小固定1G */
     // ConsumeQueue file size,default is 30W
-    private int mappedFileSizeConsumeQueue = 300000 * ConsumeQueue.CQ_STORE_UNIT_SIZE;
+    private int mappedFileSizeConsumeQueue = 300000 * ConsumeQueue.CQ_STORE_UNIT_SIZE;/* 每个消息消费队列 总存储单元 30W个 */
     // enable consume queue ext
     private boolean enableConsumeQueueExt = false;
     // ConsumeQueue extend file size, 48M
@@ -116,8 +116,8 @@ public class MessageStoreConfig {
     private int accessMessageInMemoryMaxRatio = 40;
     @ImportantField
     private boolean messageIndexEnable = true;
-    private int maxHashSlotNum = 5000000;
-    private int maxIndexNum = 5000000 * 4;
+    private int maxHashSlotNum = 5000000; /* 500W - 索引哈希槽 */
+    private int maxIndexNum = 5000000 * 4;/* 2000W - 索引项 */
     private int maxMsgsNumBatch = 64;
     @ImportantField
     private boolean messageIndexSafe = false;

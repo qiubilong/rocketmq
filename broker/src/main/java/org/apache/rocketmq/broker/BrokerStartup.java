@@ -112,7 +112,7 @@ public class BrokerStartup {
                 messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
             }
 
-            if (commandLine.hasOption('c')) {//解析配置文件
+            if (commandLine.hasOption('c')) {/* 解析配置文件 */
                 String file = commandLine.getOptionValue('c');
                 if (file != null) {
                     configFile = file;
@@ -138,7 +138,7 @@ public class BrokerStartup {
                 System.exit(-2);
             }
 
-            String namesrvAddr = brokerConfig.getNamesrvAddr(); /* 注册中心地址 */
+            String namesrvAddr = brokerConfig.getNamesrvAddr(); //* 注册中心地址校验
             if (null != namesrvAddr) {
                 try {
                     String[] addrArray = namesrvAddr.split(";");
@@ -156,7 +156,7 @@ public class BrokerStartup {
             switch (messageStoreConfig.getBrokerRole()) {
                 case ASYNC_MASTER:
                 case SYNC_MASTER:
-                    brokerConfig.setBrokerId(MixAll.MASTER_ID);
+                    brokerConfig.setBrokerId(MixAll.MASTER_ID);//强制将Master的brokerId设置为0
                     break;
                 case SLAVE:
                     if (brokerConfig.getBrokerId() <= 0) {
@@ -234,7 +234,7 @@ public class BrokerStartup {
                         if (!this.hasShutdown) {
                             this.hasShutdown = true;
                             long beginTime = System.currentTimeMillis();
-                            controller.shutdown();
+                            controller.shutdown();/* ## 3、Broker关机 */
                             long consumingTimeTotal = System.currentTimeMillis() - beginTime;
                             log.info("Shutdown hook over, consuming total time(ms): {}", consumingTimeTotal);
                         }
