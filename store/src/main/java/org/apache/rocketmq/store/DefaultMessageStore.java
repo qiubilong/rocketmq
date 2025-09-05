@@ -137,13 +137,13 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         this.allocateMappedFileService = new AllocateMappedFileService(this);
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
             this.commitLog = new DLedgerCommitLog(this);
-        } else {
+        } else { /* ## 消息存储内存映射文件，创建同步/异步刷盘工作线程 */
             this.commitLog = new CommitLog(this); /* ## 消息最终存储文件 - 所有topic的消息都写入这个文件 */
         }
         this.consumeQueueTable = new ConcurrentHashMap<>(32);
 
         this.flushConsumeQueueService = new FlushConsumeQueueService();/* 消费队列索引 -  刷盘工作线程 */
-        this.cleanCommitLogService = new CleanCommitLogService();/* 删除过期文件 */
+        this.cleanCommitLogService = new CleanCommitLogService();// 删除过期文件
         this.cleanConsumeQueueService = new CleanConsumeQueueService();
         this.storeStatsService = new StoreStatsService();
         this.indexService = new IndexService(this);/* 消息key索引服务 */
@@ -274,7 +274,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
             }
             log.info("[SetReputOffset] maxPhysicalPosInLogicQueue={} clMinOffset={} clMaxOffset={} clConfirmedOffset={}",
                 maxPhysicalPosInLogicQueue, this.commitLog.getMinOffset(), this.commitLog.getMaxOffset(), this.commitLog.getConfirmOffset());
-            this.reputMessageService.setReputFromOffset(maxPhysicalPosInLogicQueue);
+            this.reputMessageService.setReputFromOffset(maxPhysicalPosInLogicQueue); /* 启动 重构消息索引线程 */
             this.reputMessageService.start();
 
             /**
@@ -297,7 +297,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
         }
 
         this.flushConsumeQueueService.start();
-        this.commitLog.start();
+        this.commitLog.start(); /* 启动刷盘线程 */
         this.storeStatsService.start();
 
         this.createTempFile();
@@ -1923,7 +1923,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
 
             ConcurrentMap<String, ConcurrentMap<Integer, ConsumeQueue>> tables = DefaultMessageStore.this.consumeQueueTable;
 
-            for (ConcurrentMap<Integer, ConsumeQueue> maps : tables.values()) {
+            for (ConcurrentMap<Integer, ConsumeQueue> maps : tables.values()) { /* 遍历所有的消息队列 - 刷盘 */
                 for (ConsumeQueue cq : maps.values()) {
                     boolean result = false;
                     for (int i = 0; i < retryTimes && !result; i++) {
@@ -1945,7 +1945,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
 
             while (!this.isStopped()) {
                 try {
-                    int interval = DefaultMessageStore.this.getMessageStoreConfig().getFlushIntervalConsumeQueue();
+                    int interval = DefaultMessageStore.this.getMessageStoreConfig().getFlushIntervalConsumeQueue();/* 1s */
                     this.waitForRunning(interval);
                     this.doFlush(1);
                 } catch (Exception e) {
@@ -1968,7 +1968,7 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
             return 1000 * 60;
         }
     }
-
+    /* 构建 消费消息队列索引和 消息key索引 */
     class ReputMessageService extends ServiceThread {
 
         private volatile long reputFromOffset = 0;
@@ -2031,12 +2031,12 @@ public class DefaultMessageStore implements MessageStore { /* 消息存储 */
 
                             if (dispatchRequest.isSuccess()) {
                                 if (size > 0) {
-                                    DefaultMessageStore.this.doDispatch(dispatchRequest);
+                                DefaultMessageStore.this.doDispatch(dispatchRequest); /* 构建 consumerQueue队列索引和 消息key索引 */
 
                                     if (BrokerRole.SLAVE != DefaultMessageStore.this.getMessageStoreConfig().getBrokerRole()
                                             && DefaultMessageStore.this.brokerConfig.isLongPollingEnable()
                                             && DefaultMessageStore.this.messageArrivingListener != null) {
-                                        DefaultMessageStore.this.messageArrivingListener.arriving(dispatchRequest.getTopic(),
+                                        DefaultMessageStore.this.messageArrivingListener.arriving(dispatchRequest.getTopic(), /* 新消息到达，长轮训提醒 */
                                             dispatchRequest.getQueueId(), dispatchRequest.getConsumeQueueOffset() + 1,
                                             dispatchRequest.getTagsCode(), dispatchRequest.getStoreTimestamp(),
                                             dispatchRequest.getBitMap(), dispatchRequest.getPropertiesMap());

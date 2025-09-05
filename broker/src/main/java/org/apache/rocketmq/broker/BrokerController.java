@@ -155,7 +155,7 @@ public class BrokerController {
     private MessageStore messageStore;     /* ## 消息存储管理器 - DefaultMessageStore */
     private RemotingServer remotingServer; /* ## Broker Netty服务器 - NettyRemotingServer */
     private RemotingServer fastRemotingServer;
-    private TopicConfigManager topicConfigManager;
+    private TopicConfigManager topicConfigManager; /* topic配置 */
     private ExecutorService sendMessageExecutor;//存储消息 - 异步线程池
     private ExecutorService putMessageFutureExecutor;
     private ExecutorService pullMessageExecutor;//拉取消息 - 异步线程池
@@ -174,7 +174,7 @@ public class BrokerController {
     private TransactionalMessageService transactionalMessageService;
     private AbstractTransactionalMessageCheckListener transactionalMessageCheckListener;
     private Future<?> slaveSyncFuture;
-
+    //主要创建 brokerController对象 和 消费进度管理器、topic配置管理器
     public BrokerController(
         final BrokerConfig brokerConfig,
         final NettyServerConfig nettyServerConfig,
@@ -241,15 +241,15 @@ public class BrokerController {
     }
 
     public boolean initialize() throws CloneNotSupportedException {
-        boolean result = this.topicConfigManager.load();
+        boolean result = this.topicConfigManager.load();/* 加载topic配置 */
 
-        result = result && this.consumerOffsetManager.load(); //## 加载消费进度 - ConsumerOffsetManager
+        result = result && this.consumerOffsetManager.load(); /*## 加载消费进度 - ConsumerOffsetManager */
         result = result && this.subscriptionGroupManager.load();
         result = result && this.consumerFilterManager.load();
 
         if (result) {
             try {
-                this.messageStore =  /* 1、实例化 消息存储管理器  - CommitLog */
+                this.messageStore =  /* ## 1、实例化 消息存储管理器  - CommitLog内存映射文件&同步/异步刷盘线程、消息索引重构线程 */
                     new DefaultMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener,
                         this.brokerConfig);
                 if (messageStoreConfig.isEnableDLegerCommitLog()) {
@@ -267,9 +267,9 @@ public class BrokerController {
             }
         }
 
-        result = result && this.messageStore.load(); /* 加载（恢复）数据 */
+        result = result && this.messageStore.load(); /* ## 2、 加载（恢复）数据 - commitLog/consumerQueue/indexFile */
 
-        if (result) {             /* 2、创建Broker Netty 服务器 10911 */
+        if (result) {             /* 3、创建Broker Netty 服务器 10911   ///存储消息、拉取消息等各种异步线程池 */
             this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.clientHousekeepingService);
             NettyServerConfig fastConfig = (NettyServerConfig) this.nettyServerConfig.clone();
             fastConfig.setListenPort(nettyServerConfig.getListenPort() - 2);
@@ -346,7 +346,7 @@ public class BrokerController {
                 Executors.newFixedThreadPool(this.brokerConfig.getConsumerManageThreadPoolNums(), new ThreadFactoryImpl(
                     "ConsumerManageThread_"));
 
-            this.registerProcessor(); /* 3、注册Broker Netty 服务器 请求处理器 */
+            this.registerProcessor(); /* ## 4、注册Broker Netty 服务器 请求处理器 */
 
             final long initialDelay = UtilAll.computeNextMorningTimeMillis() - System.currentTimeMillis();
             final long period = 1000 * 60 * 60 * 24;
@@ -357,10 +357,10 @@ public class BrokerController {
                     log.error("schedule record error.", e);
                 }
             }, initialDelay, period, TimeUnit.MILLISECONDS);
-
+            /* ## 5、启动各种定任务，如 每5s持久化消费进度 、broker统计、更新NameServer地址*/
             this.scheduledExecutorService.scheduleAtFixedRate(() -> {
                 try {
-                    BrokerController.this.consumerOffsetManager.persist(); /* ## 每5s持久化消费进度 */
+                    BrokerController.this.consumerOffsetManager.persist();
                 } catch (Throwable e) {
                     log.error("schedule persist consumerOffset error.", e);
                 }                                    //5s
@@ -477,7 +477,7 @@ public class BrokerController {
                     log.warn("FileWatchService created error, can't load the certificate dynamically");
                 }
             }
-            initialTransaction(); /* 半事务消息回查 */
+            initialTransaction(); /* 6、半事务消息回查服务 */
             initialAcl();
             initialRpcHooks();
         }
@@ -614,8 +614,8 @@ public class BrokerController {
         this.remotingServer.registerProcessor(RequestCode.END_TRANSACTION, new EndTransactionProcessor(this), this.endTransactionExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.END_TRANSACTION, new EndTransactionProcessor(this), this.endTransactionExecutor);
 
-        /**
-         * Default
+        /*
+         * 默认处理器 - 例如 锁定消息队列
          */
         AdminBrokerProcessor adminProcessor = new AdminBrokerProcessor(this);
         this.remotingServer.registerDefaultProcessor(adminProcessor, this.adminBrokerExecutor);
@@ -753,7 +753,7 @@ public class BrokerController {
         }
 
         if (this.remotingServer != null) {
-            this.remotingServer.shutdown();
+            this.remotingServer.shutdown();/* 关闭netty */
         }
 
         if (this.fastRemotingServer != null) {
@@ -765,7 +765,7 @@ public class BrokerController {
         }
 
         if (this.messageStore != null) {
-            this.messageStore.shutdown();
+            this.messageStore.shutdown(); /* 关闭存储文件刷盘线程  */
         }
 
         this.scheduledExecutorService.shutdown();
@@ -774,8 +774,8 @@ public class BrokerController {
         } catch (InterruptedException e) {
         }
 
-        this.unregisterBrokerAll();
-
+        this.unregisterBrokerAll(); /* 从nameServer 移除 */
+        /* 关闭各种线程池 */
         if (this.sendMessageExecutor != null) {
             this.sendMessageExecutor.shutdown();
         }
@@ -800,7 +800,7 @@ public class BrokerController {
             this.brokerOuterAPI.shutdown();
         }
 
-        this.consumerOffsetManager.persist();
+        this.consumerOffsetManager.persist(); /* 持久化消费偏移 */
 
         if (this.filterServerManager != null) {
             this.filterServerManager.shutdown();
@@ -849,10 +849,10 @@ public class BrokerController {
     public String getBrokerAddr() {
         return this.brokerConfig.getBrokerIP1() + ":" + this.nettyServerConfig.getListenPort();
     }
-
+    /* 主要是启动 broker netty服务器、刷盘等工作线程、注册topic信息 */
     public void start() throws Exception {
         if (this.messageStore != null) {
-            this.messageStore.start();
+            this.messageStore.start();/* 启动 重构消息索引线程、commitLog刷盘线程、consumerQueue刷盘线程 */
         }
 
         if (this.remotingServer != null) {
@@ -872,7 +872,7 @@ public class BrokerController {
         }
 
         if (this.pullRequestHoldService != null) {
-            this.pullRequestHoldService.start();
+            this.pullRequestHoldService.start(); /* 启动 拉取消息长轮训 工作线程 */
         }
 
         if (this.clientHousekeepingService != null) {
@@ -886,7 +886,7 @@ public class BrokerController {
         if (!messageStoreConfig.isEnableDLegerCommitLog()) {
             startProcessorByHa(messageStoreConfig.getBrokerRole());
             handleSlaveSynchronize(messageStoreConfig.getBrokerRole());
-            this.registerBrokerAll(true, false, true);
+            this.registerBrokerAll(true, false, true);  /* ##  启动成功后， 广播注册topic信息 */
         }
 
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {

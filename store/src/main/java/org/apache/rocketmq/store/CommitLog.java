@@ -65,7 +65,7 @@ public class CommitLog {
     private final FlushCommitLogService flushCommitLogService;  /* 消息刷盘策略 - 同步/异步  - 工作线程*/
 
     //If TransientStorePool enabled, we must flush message to FileChannel at fixed periods
-    private final FlushCommitLogService commitLogService;
+    private final FlushCommitLogService commitLogService;//堆外内存刷新
 
     private final AppendMessageCallback appendMessageCallback;
     private final ThreadLocal<PutMessageThreadLocal> putMessageThreadLocal;
@@ -102,7 +102,7 @@ public class CommitLog {
             this.flushCommitLogService = new FlushRealTimeService(); /* 异步刷盘策略（500ms）  - 工作线程 */
         }
 
-        this.commitLogService = new CommitRealTimeService();
+        this.commitLogService = new CommitRealTimeService();//堆外内存刷新 - 默认关闭
 
         this.appendMessageCallback = new DefaultAppendMessageCallback();
         putMessageThreadLocal = new ThreadLocal<PutMessageThreadLocal>() {
@@ -137,13 +137,13 @@ public class CommitLog {
     }
 
     public void start() {
-        this.flushCommitLogService.start();
+        this.flushCommitLogService.start();/* 刷盘线程 */
 
         flushDiskWatcher.setDaemon(true);
         flushDiskWatcher.start();
 
 
-        if (defaultMessageStore.getMessageStoreConfig().isTransientStorePoolEnable()) {
+        if (defaultMessageStore.getMessageStoreConfig().isTransientStorePoolEnable()) {//false
             this.commitLogService.start();
         }
     }
@@ -1032,7 +1032,7 @@ public class CommitLog {
     abstract class FlushCommitLogService extends ServiceThread {
         protected static final int RETRY_TIMES_OVER = 10;
     }
-
+    //堆外内存刷新 - 默认关闭
     class CommitRealTimeService extends FlushCommitLogService {
 
         private long lastCommitTimestamp = 0;

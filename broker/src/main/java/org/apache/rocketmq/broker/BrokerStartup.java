@@ -217,7 +217,7 @@ public class BrokerStartup {
             // remember all configs to prevent discard
             controller.getConfiguration().registerConfig(properties);
 
-            boolean initResult = controller.initialize();            /* ## 2、初始化消息存储文件CommitLog & 启动Broker Netty服务器 */
+            boolean initResult = controller.initialize();            /* ## 2、加载topic配置、消费进度、加载恢复数据CommitLog和consumerQueue 、 启动Broker Netty服务器 */
             if (!initResult) {
                 controller.shutdown();
                 System.exit(-3);
