@@ -21,7 +21,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 
 public class PullResult {
     private final PullStatus pullStatus;//默认 PullStatus.NO_NEW_MSG
-    private final long nextBeginOffset;
+    private final long nextBeginOffset;//下次拉取消息偏移起始地址
     private final long minOffset;
     private final long maxOffset;
     private List<MessageExt> msgFoundList;

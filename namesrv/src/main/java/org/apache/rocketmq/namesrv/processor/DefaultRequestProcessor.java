@@ -361,7 +361,7 @@ public class DefaultRequestProcessor extends AsyncNettyRequestProcessor implemen
                 String orderTopicConf =
                     this.namesrvController.getKvConfigManager().getKVConfig(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG,
                         requestHeader.getTopic());
-                topicRouteData.setOrderTopicConf(orderTopicConf);
+                topicRouteData.setOrderTopicConf(orderTopicConf);/* 顺序topic */
             }
 
             byte[] content;

@@ -201,7 +201,7 @@ public class BrokerController {
         this.filterServerManager = new FilterServerManager(this);
 
         this.slaveSynchronize = new SlaveSynchronize(this);
-
+        //初始化异步队列
         this.sendThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getSendThreadPoolQueueCapacity());//10000 - 存储消息
         this.putThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getPutThreadPoolQueueCapacity());
         this.pullThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getPullThreadPoolQueueCapacity());//10 0000 - 拉取消息
@@ -249,7 +249,7 @@ public class BrokerController {
 
         if (result) {
             try {
-                this.messageStore =  /* ## 1、实例化 消息存储管理器  - CommitLog内存映射文件&同步/异步刷盘线程、消息索引重构线程 */
+                this.messageStore =  /* ## 1、实例化 消息存储管理器  - 创建CommitLog内存映射文件&同步/异步刷盘线程、消息索引重构线程 */
                     new DefaultMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener,
                         this.brokerConfig);
                 if (messageStoreConfig.isEnableDLegerCommitLog()) {
@@ -765,7 +765,7 @@ public class BrokerController {
         }
 
         if (this.messageStore != null) {
-            this.messageStore.shutdown(); /* 关闭存储文件刷盘线程  */
+            this.messageStore.shutdown(); /* 关闭存储文件 &刷盘线程  */
         }
 
         this.scheduledExecutorService.shutdown();
@@ -774,7 +774,7 @@ public class BrokerController {
         } catch (InterruptedException e) {
         }
 
-        this.unregisterBrokerAll(); /* 从nameServer 移除 */
+        this.unregisterBrokerAll(); /* 通知 nameServer 移除 */
         /* 关闭各种线程池 */
         if (this.sendMessageExecutor != null) {
             this.sendMessageExecutor.shutdown();
@@ -849,7 +849,7 @@ public class BrokerController {
     public String getBrokerAddr() {
         return this.brokerConfig.getBrokerIP1() + ":" + this.nettyServerConfig.getListenPort();
     }
-    /* 主要是启动 broker netty服务器、刷盘等工作线程、注册topic信息 */
+    /* 主要是启动 broker netty服务器、刷盘等工作线程、向nameServer注册topic信息 */
     public void start() throws Exception {
         if (this.messageStore != null) {
             this.messageStore.start();/* 启动 重构消息索引线程、commitLog刷盘线程、consumerQueue刷盘线程 */

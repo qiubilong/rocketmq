@@ -22,7 +22,7 @@ public class PullRequest {
     private String consumerGroup;       /* 消费组 */
     private MessageQueue messageQueue;  /* Topic分区 */
     private ProcessQueue processQueue;  /* Topic分区拉取到的消息列表 */
-    private long nextOffset;
+    private long nextOffset;//拉取消息偏移
     private boolean previouslyLocked = false;
 
     public boolean isPreviouslyLocked() {

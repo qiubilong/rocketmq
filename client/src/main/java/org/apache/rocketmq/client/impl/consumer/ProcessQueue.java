@@ -272,7 +272,7 @@ public class ProcessQueue { /* 消费者 - MessageQueue对应的 -  本地消息
                 for (MessageExt msg : this.consumingMsgOrderlyTreeMap.values()) {
                     msgSize.addAndGet(0 - msg.getBody().length);
                 }
-                this.consumingMsgOrderlyTreeMap.clear();
+                this.consumingMsgOrderlyTreeMap.clear();/* 删除顺序消费标记 */
                 if (offset != null) {
                     return offset + 1;
                 }
@@ -301,7 +301,7 @@ public class ProcessQueue { /* 消费者 - MessageQueue对应的 -  本地消息
             log.error("makeMessageToCosumeAgain exception", e);
         }
     }
-
+    /* 顺序获取消息 */
     public List<MessageExt> takeMessages(final int batchSize) {
         List<MessageExt> result = new ArrayList<MessageExt>(batchSize);
         final long now = System.currentTimeMillis();

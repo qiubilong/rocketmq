@@ -161,7 +161,7 @@ public class MQClientInstance {
     public static TopicPublishInfo topicRouteData2TopicPublishInfo(final String topic, final TopicRouteData route) {
         TopicPublishInfo info = new TopicPublishInfo();
         info.setTopicRouteData(route);
-        if (route.getOrderTopicConf() != null && route.getOrderTopicConf().length() > 0) {
+        if (route.getOrderTopicConf() != null && route.getOrderTopicConf().length() > 0) {/* 顺序topic */
             String[] brokers = route.getOrderTopicConf().split(";");
             for (String broker : brokers) {
                 String[] item = broker.split(":");
@@ -443,7 +443,7 @@ public class MQClientInstance {
                 }
                 // may need to check one broker every cluster...
                 // assume that the configs of every broker in cluster are the the same.
-                String addr = findBrokerAddrByTopic(subscriptionData.getTopic());
+                String addr = findBrokerAddrByTopic(subscriptionData.getTopic());/* 优先选择主节点 */
 
                 if (addr != null) {
                     try {
@@ -1051,7 +1051,7 @@ public class MQClientInstance {
             if (!brokers.isEmpty()) {
                 int index = random.nextInt(brokers.size());
                 BrokerData bd = brokers.get(index % brokers.size());
-                return bd.selectBrokerAddr();
+                return bd.selectBrokerAddr();/* 优先选择主节点 */
             }
         }
 

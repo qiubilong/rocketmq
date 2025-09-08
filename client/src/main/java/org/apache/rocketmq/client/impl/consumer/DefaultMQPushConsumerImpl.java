@@ -293,7 +293,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     }
 
                     pullRequest.setPreviouslyLocked(true);
-                    pullRequest.setNextOffset(offset);
+                    pullRequest.setNextOffset(offset);//拉取消息偏移
                 }
             } else {
                 this.executePullRequestLater(pullRequest, pullTimeDelayMillsWhenException);
