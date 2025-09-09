@@ -461,7 +461,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                         }
 
                         final int consumeBatchSize =
-                            ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize();//默认1
+                            ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize();//默认1，相当于一条一条消费
                                                        /* 2、获取消息 */
                         List<MessageExt> msgs = this.processQueue.takeMessages(consumeBatchSize);
                         defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, defaultMQPushConsumer.getConsumerGroup());
@@ -489,7 +489,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                             boolean hasException = false;
                             try {
                                 this.processQueue.getConsumeLock().lock();
-                                if (this.processQueue.isDropped()) {
+                                if (this.processQueue.isDropped()) {//分区重平衡已经废弃
                                     log.warn("consumeMessage, the message queue not be able to consume, because it's dropped. {}",
                                         this.messageQueue);
                                     break;

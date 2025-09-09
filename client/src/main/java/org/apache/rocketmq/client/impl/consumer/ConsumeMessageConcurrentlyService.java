@@ -444,7 +444,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
 
             ConsumeMessageConcurrentlyService.this.getConsumerStatsManager()
                 .incConsumeRT(ConsumeMessageConcurrentlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
-
+            /* 如果刚好发生重平衡，那么就不会更新消费偏移，也就是会发生重复消费 */
             if (!processQueue.isDropped()) {          /* ## 消息消费成功，更新最小消费偏移offset */
                 ConsumeMessageConcurrentlyService.this.processConsumeResult(status, context, this);
             } else {
