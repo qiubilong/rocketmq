@@ -419,7 +419,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor {
                         PullRequest pullRequest = new PullRequest(request, channel, pollingTimeMills,
                             this.brokerController.getMessageStore().now(), offset, subscriptionData, messageFilter);
                         this.brokerController.getPullRequestHoldService().suspendPullRequest(topic, queueId, pullRequest);/* 15s长轮询 - 有新消息时，主动推送 */
-                        response = null;
+                        response = null;//没有拉到消息，不用返回
                         break;
                     }
 
