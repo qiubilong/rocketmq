@@ -555,7 +555,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed() : 1;
             int times = 0;
             String[] brokersSent = new String[timesTotal];
-            for (; times < timesTotal; times++) {/* 同步请求，timesTotal=3 */
+            for (; times < timesTotal; times++) {/* 同步请求，timesTotal=3 */ //重试客户端消息id不会变
                 String lastBrokerName = null == mq ? null : mq.getBrokerName();
                 MessageQueue mqSelected = this.selectOneMessageQueue(topicPublishInfo, lastBrokerName);/* 2、轮询选择topic分区，如果上次的Broker发送失败，尽量跳过 */
                 if (mqSelected != null) {
@@ -612,7 +612,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         log.warn(String.format("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq), e);
                         log.warn(msg.toString());
                         exception = e;
-                        if (this.defaultMQProducer.getRetryResponseCodes().contains(e.getResponseCode())) { /* broker内部异常重试 */
+                        if (this.defaultMQProducer.getRetryResponseCodes().contains(e.getResponseCode())) { /* broker内部异常重试 */ /* CREATE_MAPEDFILE_FAILED / OS_PAGECACHE_BUSY / UNKNOWN_ERROR */
                             continue;
                         } else {
                             if (sendResult != null) {
@@ -1252,7 +1252,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         msg.putUserProperty("__transactionId__", sendResult.getTransactionId());
                     }
                     String transactionId = msg.getProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
-                    if (null != transactionId && !"".equals(transactionId)) {
+                    if (null != transactionId && !"".equals(transactionId)) {//客户端消息id就是事务id
                         msg.setTransactionId(transactionId);
                     }
                     if (null != localTransactionExecuter) {

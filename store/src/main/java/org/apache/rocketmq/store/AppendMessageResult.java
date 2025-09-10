@@ -29,7 +29,7 @@ public class AppendMessageResult {
     // Write Bytes
     private int wroteBytes;
     // Message ID
-    private String msgId;
+    private String msgId; /* 服务端消息id */
     private Supplier<String> msgIdSupplier;
     // Message storage timestamp
     private long storeTimestamp;
