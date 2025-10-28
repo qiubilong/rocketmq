@@ -296,7 +296,7 @@ public abstract class RebalanceImpl {
                     }
                                            /* ## 5、更新分区重平衡结果，开始拉取消息 */
                     boolean changed = this.updateProcessQueueTableInRebalance(topic, allocateResultSet, isOrder);
-                    if (changed) {
+                    if (changed) {//重平衡分区变化后，首先同步消费偏移，接着再更新订阅版本号，这样保证分区分配变化后也不会拉到旧数据，导致重复消费，因为broker那边订阅版本号没更新，其他消费者也消费不了
                         log.info(
                             "rebalanced result changed. allocateMessageQueueStrategyName={}, group={}, topic={}, clientId={}, mqAllSize={}, cidAllSize={}, rebalanceResultSize={}, rebalanceResultSet={}",
                             strategy.getName(), consumerGroup, topic, this.mQClientFactory.getClientId(), mqSet.size(), cidAll.size(),

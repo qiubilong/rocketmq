@@ -590,7 +590,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
                 this.checkConfig();//设置检查
 
-                this.copySubscription();
+                this.copySubscription();//自动订阅消费者重试队列
 
                 if (this.defaultMQPushConsumer.getMessageModel() == MessageModel.CLUSTERING) {
                     this.defaultMQPushConsumer.changeInstanceNameToPID();//如果没有设置实例名字，设置消费者实例名为pid + nanoTime

@@ -143,7 +143,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
             return CompletableFuture.completedFuture(response);
         }
 
-        String newTopic = MixAll.getRetryTopic(requestHeader.getGroup());
+        String newTopic = MixAll.getRetryTopic(requestHeader.getGroup()); /* 每个消费者一个重试队列 */
         int queueIdInt = ThreadLocalRandom.current().nextInt(99999999) % subscriptionGroupConfig.getRetryQueueNums();
         int topicSysFlag = 0;
         if (requestHeader.isUnitMode()) {
@@ -190,7 +190,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
 
         if (msgExt.getReconsumeTimes() >= maxReconsumeTimes
             || delayLevel < 0) {
-            newTopic = MixAll.getDLQTopic(requestHeader.getGroup());
+            newTopic = MixAll.getDLQTopic(requestHeader.getGroup()); /* 死信队列 */
             queueIdInt = ThreadLocalRandom.current().nextInt(99999999) % DLQ_NUMS_PER_GROUP;
 
             topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic,
@@ -207,7 +207,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
             if (0 == delayLevel) {
                 delayLevel = 3 + msgExt.getReconsumeTimes();
             }
-            msgExt.setDelayTimeLevel(delayLevel);
+            msgExt.setDelayTimeLevel(delayLevel); /* 本质是延迟队列 */
         }
 
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
@@ -223,7 +223,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor {
         msgInner.setBornTimestamp(msgExt.getBornTimestamp());
         msgInner.setBornHost(msgExt.getBornHost());
         msgInner.setStoreHost(msgExt.getStoreHost());
-        msgInner.setReconsumeTimes(msgExt.getReconsumeTimes() + 1);
+        msgInner.setReconsumeTimes(msgExt.getReconsumeTimes() + 1);/* 消费次数+1 */
 
         String originMsgId = MessageAccessor.getOriginMessageId(msgExt);
         MessageAccessor.setOriginMessageId(msgInner, UtilAll.isBlank(originMsgId) ? msgExt.getMsgId() : originMsgId);
