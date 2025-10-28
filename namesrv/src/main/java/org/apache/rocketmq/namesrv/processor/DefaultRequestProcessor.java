@@ -203,7 +203,7 @@ public class DefaultRequestProcessor extends AsyncNettyRequestProcessor implemen
         response.setRemark(null);
         return response;
     }
-
+    /* 注册 topic 路由信息 */
     public RemotingCommand registerBrokerWithFilterServer(ChannelHandlerContext ctx, RemotingCommand request)
         throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(RegisterBrokerResponseHeader.class);

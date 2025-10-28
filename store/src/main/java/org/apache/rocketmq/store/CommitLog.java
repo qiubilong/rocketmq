@@ -886,7 +886,7 @@ public class CommitLog {
     }
 
     public CompletableFuture<PutMessageStatus> submitReplicaRequest(AppendMessageResult result, MessageExt messageExt) {
-        if (BrokerRole.SYNC_MASTER == this.defaultMessageStore.getMessageStoreConfig().getBrokerRole()) {
+        if (BrokerRole.SYNC_MASTER == this.defaultMessageStore.getMessageStoreConfig().getBrokerRole()) {/* 等待主从同步 */
             HAService service = this.defaultMessageStore.getHaService();
             if (messageExt.isWaitStoreMsgOK()) {
                 if (service.isSlaveOK(result.getWroteBytes() + result.getWroteOffset())) {

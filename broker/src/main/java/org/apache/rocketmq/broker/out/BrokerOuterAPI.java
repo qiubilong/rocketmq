@@ -109,7 +109,7 @@ public class BrokerOuterAPI {
 
         this.remotingClient.updateNameServerAddressList(lst);
     }
-
+    /* 向所有的NameServer注册Topic和Broker路由信息 */
     public List<RegisterBrokerResult> registerBrokerAll(
         final String clusterName,
         final String brokerAddr,

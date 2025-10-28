@@ -224,7 +224,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                             || (valueOfCurrentMinusBorn <= -1);
 
                         if (isNeedCheck) {
-                            if (!putBackHalfMsgQueue(msgExt, i)) {
+                            if (!putBackHalfMsgQueue(msgExt, i)) { /* 从新入队，下次再检查 */
                                 continue;
                             }
                             listener.resolveHalfMsg(msgExt);/* 回查事务状态 */

@@ -251,7 +251,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
             prev.setLastUpdateTimestamp(timeStamp);
         }
     }
-    /* topic消息队列配置 */
+    /* 设置 - topic消息队列配置 */
     private void createAndUpdateQueueData(final String brokerName, final TopicConfig topicConfig) {
         QueueData queueData = new QueueData();
         queueData.setBrokerName(brokerName);
@@ -483,7 +483,7 @@ public class RouteInfoManager {/* Topic路由注册中心 */
 
         return removeCount;
     }
-
+    /* 移除掉线broker */
     public void onChannelDestroy(String remoteAddr, Channel channel) {
         String brokerAddrFound = null;
         if (channel != null) {

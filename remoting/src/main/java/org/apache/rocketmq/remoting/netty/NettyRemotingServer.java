@@ -201,7 +201,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                 .channel(useEpoll() ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, nettyServerConfig.getServerSocketBacklog())
                 .option(ChannelOption.SO_REUSEADDR, true)
-                .option(ChannelOption.SO_KEEPALIVE, false)
+                .option(ChannelOption.SO_KEEPALIVE, false)//应用自定义空闲探测
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .localAddress(new InetSocketAddress(this.nettyServerConfig.getListenPort()))//9876
                 .childHandler(new ChannelInitializer<SocketChannel>() { /* 客户端Channel - 初始化回调 */
@@ -209,7 +209,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                     public void initChannel(SocketChannel ch) throws Exception {
                         ch.pipeline()
                             .addLast(defaultEventExecutorGroup, HANDSHAKE_HANDLER_NAME, handshakeHandler)
-                            .addLast(defaultEventExecutorGroup,
+                            .addLast(defaultEventExecutorGroup,//业务线程池
                                 encoder,//outBound
                                 new NettyDecoder(),//inBound
                                 new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()),  /* 空闲检测 120s */
@@ -254,7 +254,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             @Override
             public void run() {
                 try {
-                    NettyRemotingServer.this.scanResponseTable();
+                    NettyRemotingServer.this.scanResponseTable();    /* 删除超时请求 */
                 } catch (Throwable e) {
                     log.error("scanResponseTable exception", e);
                 }

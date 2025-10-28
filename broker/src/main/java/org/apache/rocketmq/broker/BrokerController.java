@@ -184,11 +184,11 @@ public class BrokerController {
         this.brokerConfig = brokerConfig;
         this.nettyServerConfig = nettyServerConfig;
         this.nettyClientConfig = nettyClientConfig;
-        this.messageStoreConfig = messageStoreConfig;
-        this.consumerOffsetManager = messageStoreConfig.isEnableLmq() ? new LmqConsumerOffsetManager(this) : new ConsumerOffsetManager(this); /* 消费进度管理 */
-        this.topicConfigManager = messageStoreConfig.isEnableLmq() ? new LmqTopicConfigManager(this) : new TopicConfigManager(this);/* topic配置管理 */
-        this.pullMessageProcessor = new PullMessageProcessor(this); /* 拉取消息处理器 */
-        this.pullRequestHoldService = messageStoreConfig.isEnableLmq() ? new LmqPullRequestHoldService(this) : new PullRequestHoldService(this); /* 拉取消息长轮训服务 */
+        this.messageStoreConfig = messageStoreConfig;       /* 消费进度管理 */     /* topic配置管理 */
+        this.consumerOffsetManager = messageStoreConfig.isEnableLmq() ? new LmqConsumerOffsetManager(this) : new ConsumerOffsetManager(this);
+        this.topicConfigManager = messageStoreConfig.isEnableLmq() ? new LmqTopicConfigManager(this) : new TopicConfigManager(this);
+        this.pullMessageProcessor = new PullMessageProcessor(this); /* 拉取消息处理器 */                        /* 拉取消息长轮训服务 */
+        this.pullRequestHoldService = messageStoreConfig.isEnableLmq() ? new LmqPullRequestHoldService(this) : new PullRequestHoldService(this);
         this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService);//新消息通知
         this.consumerIdsChangeListener = new DefaultConsumerIdsChangeListener(this);
         this.consumerManager = new ConsumerManager(this.consumerIdsChangeListener);
@@ -886,7 +886,7 @@ public class BrokerController {
         if (!messageStoreConfig.isEnableDLegerCommitLog()) {
             startProcessorByHa(messageStoreConfig.getBrokerRole());
             handleSlaveSynchronize(messageStoreConfig.getBrokerRole());
-            this.registerBrokerAll(true, false, true);  /* ##  启动成功后， 广播注册topic信息 */
+            this.registerBrokerAll(true, false, true);  /* 向所有的NameServer注册Topic和Broker路由信息 */
         }
 
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
@@ -929,7 +929,7 @@ public class BrokerController {
 
         doRegisterBrokerAll(true, false, topicConfigSerializeWrapper);
     }
-
+    /* 向所有的NameServer注册Topic和Broker路由信息 */
     public synchronized void registerBrokerAll(final boolean checkOrderConfig, boolean oneway, boolean forceRegister) {
         TopicConfigSerializeWrapper topicConfigWrapper = this.getTopicConfigManager().buildTopicConfigSerializeWrapper();
 
@@ -950,13 +950,13 @@ public class BrokerController {
             this.brokerConfig.getBrokerName(),
             this.brokerConfig.getBrokerId(),
             this.brokerConfig.getRegisterBrokerTimeoutMills())) {
-            doRegisterBrokerAll(checkOrderConfig, oneway, topicConfigWrapper);
+            doRegisterBrokerAll(checkOrderConfig, oneway, topicConfigWrapper);/* 向所有的NameServer注册Topic和Broker路由信息 */
         }
     }
 
     private void doRegisterBrokerAll(boolean checkOrderConfig, boolean oneway,
         TopicConfigSerializeWrapper topicConfigWrapper) {
-        List<RegisterBrokerResult> registerBrokerResultList = this.brokerOuterAPI.registerBrokerAll(
+        List<RegisterBrokerResult> registerBrokerResultList = this.brokerOuterAPI.registerBrokerAll(/* 向所有的NameServer注册Topic和Broker路由信息 */
             this.brokerConfig.getBrokerClusterName(),
             this.getBrokerAddr(),
             this.brokerConfig.getBrokerName(),
