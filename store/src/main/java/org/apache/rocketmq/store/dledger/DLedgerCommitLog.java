@@ -61,7 +61,7 @@ import org.apache.rocketmq.store.schedule.ScheduleMessageService;
 /**
  * Store all metadata downtime for recovery, data protection reliability
  */
-public class DLedgerCommitLog extends CommitLog {
+public class DLedgerCommitLog extends CommitLog { /* 分布式日志存储*/
 
     static {
         System.setProperty("dLedger.multiPath.Splitter", MessageStoreConfig.MULTI_PATH_SPLITTER);
@@ -86,7 +86,7 @@ public class DLedgerCommitLog extends CommitLog {
     private final StringBuilder msgIdBuilder = new StringBuilder();
 
     public DLedgerCommitLog(final DefaultMessageStore defaultMessageStore) {
-        super(defaultMessageStore);
+        super(defaultMessageStore);/* 创建commitLog 文件 */
         dLedgerConfig = new DLedgerConfig();
         dLedgerConfig.setEnableDiskForceClean(defaultMessageStore.getMessageStoreConfig().isCleanFileForciblyEnable());
         dLedgerConfig.setStoreType(DLedgerConfig.FILE);
@@ -104,7 +104,7 @@ public class DLedgerCommitLog extends CommitLog {
         dLedgerConfig.setDiskSpaceRatioToCheckExpired(defaultMessageStore.getMessageStoreConfig().getDiskMaxUsedSpaceRatio() / 100f);
 
         id = Integer.parseInt(dLedgerConfig.getSelfId().substring(1)) + 1;
-        dLedgerServer = new DLedgerServer(dLedgerConfig);
+        dLedgerServer = new DLedgerServer(dLedgerConfig);/* 创建 分布式日志存储服务器 */
         dLedgerFileStore = (DLedgerMmapFileStore) dLedgerServer.getdLedgerStore();
         DLedgerMmapFileStore.AppendHook appendHook = (entry, buffer, bodyOffset) -> {
             assert bodyOffset == DLedgerEntry.BODY_OFFSET;
@@ -421,7 +421,7 @@ public class DLedgerCommitLog extends CommitLog {
         }
     }
 
-    @Override
+    @Override     /* 存储分布式消息 */
     public CompletableFuture<PutMessageResult> asyncPutMessage(MessageExtBrokerInner msg) {
 
         StoreStatsService storeStatsService = this.defaultMessageStore.getStoreStatsService();
@@ -466,7 +466,7 @@ public class DLedgerCommitLog extends CommitLog {
             request.setGroup(dLedgerConfig.getGroup());
             request.setRemoteId(dLedgerServer.getMemberState().getSelfId());
             request.setBody(encodeResult.getData());
-            dledgerFuture = (AppendFuture<AppendEntryResponse>) dLedgerServer.handleAppend(request);
+            dledgerFuture = (AppendFuture<AppendEntryResponse>) dLedgerServer.handleAppend(request); /* 写 dledger request entry 分布式日志，返回 等待ack异步对象 */
             if (dledgerFuture.getPos() == -1) {
                 return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.OS_PAGECACHE_BUSY, new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR)));
             }
@@ -505,7 +505,7 @@ public class DLedgerCommitLog extends CommitLog {
 
         return dledgerFuture.thenApply(appendEntryResponse -> {
             PutMessageStatus putMessageStatus = PutMessageStatus.UNKNOWN_ERROR;
-            switch (DLedgerResponseCode.valueOf(appendEntryResponse.getCode())) {
+            switch (DLedgerResponseCode.valueOf(appendEntryResponse.getCode())) { /* 消息 写入 多数节点 */
                 case SUCCESS:
                     putMessageStatus = PutMessageStatus.PUT_OK;
                     break;
