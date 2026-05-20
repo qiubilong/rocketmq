@@ -139,7 +139,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         if (publicThreadNums <= 0) {
             publicThreadNums = 4;
         }
-
+        /* 收到请求，异步处理线程池 */
         this.publicExecutor = Executors.newFixedThreadPool(publicThreadNums, new ThreadFactoryImpl("NettyClientPublicExecutor_"));
 
         this.scanExecutor = ThreadUtils.newThreadPoolExecutor(4, 10, 60, TimeUnit.SECONDS,
@@ -148,7 +148,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         if (eventLoopGroup != null) {
             this.eventLoopGroupWorker = eventLoopGroup;
         } else {
-            this.eventLoopGroupWorker = new NioEventLoopGroup(1, new ThreadFactoryImpl("NettyClientSelector_"));
+            this.eventLoopGroupWorker = new NioEventLoopGroup(1, new ThreadFactoryImpl("NettyClientSelector_")); /* io事件循环工作线程池 - 1个线程就够 */
         }
         this.defaultEventExecutorGroup = eventExecutorGroup;
 

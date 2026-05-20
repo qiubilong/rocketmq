@@ -43,7 +43,7 @@ public class ClientConfig {
     public static final String HEART_BEAT_V2 = "com.rocketmq.heartbeat.v2";
     private String namesrvAddr = NameServerAddressUtils.getNameServerAddresses();
     private String clientIP = NetworkUtil.getLocalAddress();
-    private String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");
+    private String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");//实例名字。没设置的话，取 pid + System.nonTime
     private int clientCallbackExecutorThreads = Runtime.getRuntime().availableProcessors();
     protected String namespace;
     private boolean namespaceInitialized = false;
@@ -99,7 +99,7 @@ public class ClientConfig {
         sb.append(this.getClientIP());
 
         sb.append("@");
-        sb.append(this.getInstanceName());
+        sb.append(this.getInstanceName());/* UtilAll.getPid() + "#" + System.nanoTime(); */
         if (!UtilAll.isBlank(this.unitName)) {
             sb.append("@");
             sb.append(this.unitName);

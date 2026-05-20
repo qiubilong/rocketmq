@@ -46,26 +46,26 @@ import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
-public abstract class RebalanceImpl {
+public abstract class RebalanceImpl { /* 重平衡实现类 */
     protected static final Logger log = LoggerFactory.getLogger(RebalanceImpl.class);
-
-    protected final ConcurrentMap<MessageQueue, ProcessQueue> processQueueTable = new ConcurrentHashMap<>(64);
+                                 /* broker消息队列 <-> 本地消息队列    */
+    protected final ConcurrentMap<MessageQueue, ProcessQueue> processQueueTable = new ConcurrentHashMap<>(64); /* 消息队列映射表 */
     protected final ConcurrentMap<MessageQueue, PopProcessQueue> popProcessQueueTable = new ConcurrentHashMap<>(64);
 
-    protected final ConcurrentMap<String/* topic */, Set<MessageQueue>> topicSubscribeInfoTable =
+    protected final ConcurrentMap<String/* topic */, Set<MessageQueue>> topicSubscribeInfoTable =     /* topic的消息队列 - 拉取topic路由信息后更新 */
         new ConcurrentHashMap<>();
-    protected final ConcurrentMap<String /* topic */, SubscriptionData> subscriptionInner =
+    protected final ConcurrentMap<String /* topic */, SubscriptionData> subscriptionInner =           /* 订阅的topic */
         new ConcurrentHashMap<>();
     protected String consumerGroup;
-    protected MessageModel messageModel;
-    protected AllocateMessageQueueStrategy allocateMessageQueueStrategy;
-    protected MQClientInstance mQClientFactory;
+    protected MessageModel messageModel; //消费模式
+    protected AllocateMessageQueueStrategy allocateMessageQueueStrategy;//平衡策略
+    protected MQClientInstance mQClientFactory;//通讯客户端
     private static final int TIMEOUT_CHECK_TIMES = 3;
     private static final int QUERY_ASSIGNMENT_TIMEOUT = 3000;
 
     private Map<String, String> topicBrokerRebalance = new ConcurrentHashMap<>();
     private Map<String, String> topicClientRebalance = new ConcurrentHashMap<>();
-
+    /* ## 1、消费者启动时会立即触发重平衡     2、定时任务默认每20秒触发一次重平衡    3、 Broker通知当topic路由信息变化时也会触发重平衡 */
     public RebalanceImpl(String consumerGroup, MessageModel messageModel,
         AllocateMessageQueueStrategy allocateMessageQueueStrategy,
         MQClientInstance mQClientFactory) {
@@ -74,7 +74,7 @@ public abstract class RebalanceImpl {
         this.allocateMessageQueueStrategy = allocateMessageQueueStrategy;
         this.mQClientFactory = mQClientFactory;
     }
-
+    /* 顺序消费 - 解锁 - 消息队列 */
     public void unlock(final MessageQueue mq, final boolean oneway) {
         FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MixAll.MASTER_ID, true);
         if (findBrokerResult != null) {
@@ -163,7 +163,7 @@ public abstract class RebalanceImpl {
             requestBody.getMqSet().add(mq);
 
             try {
-                Set<MessageQueue> lockedMq =
+                Set<MessageQueue> lockedMq =      /* 消费者向Broker锁定MessageQueue */
                     this.mQClientFactory.getMQClientAPIImpl().lockBatchMQ(findBrokerResult.getBrokerAddr(), requestBody, 1000);
                 for (MessageQueue mmqq : lockedMq) {
                     ProcessQueue processQueue = this.processQueueTable.get(mmqq);

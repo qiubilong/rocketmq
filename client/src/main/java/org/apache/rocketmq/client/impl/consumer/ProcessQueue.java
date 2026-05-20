@@ -38,7 +38,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 /**
  * Queue consumption snapshot
  */
-public class ProcessQueue {
+public class ProcessQueue {/* 消费者 - MessageQueue对应的 -  本地消息缓存队列 */
     public final static long REBALANCE_LOCK_MAX_LIVE_TIME =
         Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockMaxLiveTime", "30000"));
     public final static long REBALANCE_LOCK_INTERVAL = Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockInterval", "20000"));
@@ -52,13 +52,13 @@ public class ProcessQueue {
     /**
      * A subset of msgTreeMap, will only be used when orderly consume
      */
-    private final TreeMap<Long, MessageExt> consumingMsgOrderlyTreeMap = new TreeMap<>();
+    private final TreeMap<Long, MessageExt> consumingMsgOrderlyTreeMap = new TreeMap<>();/* offset有序的 - 待消费的  - 消息缓存队列 */
     private final AtomicLong tryUnlockTimes = new AtomicLong(0);
-    private volatile long queueOffsetMax = 0L;
-    private volatile boolean dropped = false;
+    private volatile long queueOffsetMax = 0L;/* 目前拉取消息的最大偏移量 */
+    private volatile boolean dropped = false;//重平衡后移除
     private volatile long lastPullTimestamp = System.currentTimeMillis();
     private volatile long lastConsumeTimestamp = System.currentTimeMillis();
-    private volatile boolean locked = false;
+    private volatile boolean locked = false;/* 顺序消费时，队列加锁状态 */
     private volatile long lastLockTimestamp = System.currentTimeMillis();
     private volatile boolean consuming = false;
     private volatile long msgAccCnt = 0;
@@ -74,7 +74,7 @@ public class ProcessQueue {
     /**
      * @param pushConsumer
      */
-    public void cleanExpiredMsg(DefaultMQPushConsumer pushConsumer) {
+    public void cleanExpiredMsg(DefaultMQPushConsumer pushConsumer) {/* 移除 超过15分钟 没消费的消息 */
         if (pushConsumer.isConsumeOrderly()) {
             return;
         }

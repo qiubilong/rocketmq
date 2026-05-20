@@ -48,11 +48,11 @@ import org.apache.rocketmq.remoting.protocol.body.ConsumeMessageDirectlyResult;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
-public class ConsumeMessageConcurrentlyService implements ConsumeMessageService {
+public class ConsumeMessageConcurrentlyService implements ConsumeMessageService {/* 并发消费  */
     private static final Logger log = LoggerFactory.getLogger(ConsumeMessageConcurrentlyService.class);
     private final DefaultMQPushConsumerImpl defaultMQPushConsumerImpl;
     private final DefaultMQPushConsumer defaultMQPushConsumer;
-    private final MessageListenerConcurrently messageListener;
+    private final MessageListenerConcurrently messageListener; /* 业务 - 消费消息实现类 */
     private final BlockingQueue<Runnable> consumeRequestQueue;
     private final ThreadPoolExecutor consumeExecutor;
     private final String consumerGroup;
@@ -70,7 +70,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         this.consumeRequestQueue = new LinkedBlockingQueue<>();
 
         String consumerGroupTag = (consumerGroup.length() > 100 ? consumerGroup.substring(0, 100) : consumerGroup) + "_";
-        this.consumeExecutor = new ThreadPoolExecutor(
+        this.consumeExecutor = new ThreadPoolExecutor( /* 并发消费线程池 */
             this.defaultMQPushConsumer.getConsumeThreadMin(),
             this.defaultMQPushConsumer.getConsumeThreadMax(),
             1000 * 60,
@@ -88,7 +88,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             @Override
             public void run() {
                 try {
-                    cleanExpireMsg();
+                    cleanExpireMsg();/* 移除 超过15分钟 没消费的消息 */
                 } catch (Throwable e) {
                     log.error("scheduleAtFixedRate cleanExpireMsg exception", e);
                 }
@@ -229,7 +229,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         throw new UnsupportedOperationException();
     }
 
-    private void cleanExpireMsg() {
+    private void cleanExpireMsg() {/* 移除 超过15分钟 没消费的消息 */
         Iterator<Map.Entry<MessageQueue, ProcessQueue>> it =
             this.defaultMQPushConsumerImpl.getRebalanceImpl().getProcessQueueTable().entrySet().iterator();
         while (it.hasNext()) {

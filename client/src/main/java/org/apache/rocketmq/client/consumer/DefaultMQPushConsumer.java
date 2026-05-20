@@ -62,7 +62,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
  * <strong>Thread Safety:</strong> After initialization, the instance can be regarded as thread-safe.
  * </p>
  */
-public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsumer {
+public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsumer { /* 消费者 - 配置类 */
 
     private final Logger log = LoggerFactory.getLogger(DefaultMQPushConsumer.class);
 
@@ -92,7 +92,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      *
      * This field defaults to clustering.
      */
-    private MessageModel messageModel = MessageModel.CLUSTERING;
+    private MessageModel messageModel = MessageModel.CLUSTERING;/* 默认 - 集群消费模式 */
 
     /**
      * Consuming point on consumer booting.
@@ -125,7 +125,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * </li>
      * </ul>
      */
-    private ConsumeFromWhere consumeFromWhere = ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET;
+    private ConsumeFromWhere consumeFromWhere = ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET; /* 默认从上次开始消费 */
 
     /**
      * Backtracking consumption time with second precision. Time format is
@@ -143,7 +143,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Subscription relationship
      */
-    private Map<String /* topic */, String /* sub expression */> subscription = new HashMap<>();
+    private Map<String /* topic */, String /* sub expression */> subscription = new HashMap<>(); // 感觉是废弃，真正的订阅信息保存在 #RebalanceImpl中
 
     /**
      * Message listener
@@ -158,7 +158,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Minimum consumer thread number
      */
-    private int consumeThreadMin = 20;
+    private int consumeThreadMin = 20; /* 并发消费线程池 */
 
     /**
      * Max consumer thread number
@@ -179,7 +179,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * Flow control threshold on queue level, each message queue will cache at most 1000 messages by default,
      * Consider the {@code pullBatchSize}, the instantaneous value may exceed the limit
      */
-    private int pullThresholdForQueue = 1000;
+    private int pullThresholdForQueue = 1000; /* 拉取流控 - 消息队列维度 -每个【本地消息队列】最多只能保留1000条  */
 
     /**
      * Flow control threshold on queue level, means max num of messages waiting to ack.
@@ -194,7 +194,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * <p>
      * The size(MB) of a message only measured by message body, so it's not accurate
      */
-    private int pullThresholdSizeForQueue = 100;
+    private int pullThresholdSizeForQueue = 100; // 流控 - 消息队列维护 - 消息字节大小
 
     /**
      * Flow control threshold on topic level, default value is -1(Unlimited)
@@ -205,7 +205,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * For example, if the value of pullThresholdForTopic is 1000 and 10 message queues are assigned to this consumer,
      * then pullThresholdForQueue will be set to 100
      */
-    private int pullThresholdForTopic = -1;
+    private int pullThresholdForTopic = -1; /* 拉取流控 - topic维度  */
 
     /**
      * Limit the cached message size on topic level, default value is -1 MiB(Unlimited)
@@ -226,7 +226,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Batch consumption size
      */
-    private int consumeMessageBatchMaxSize = 1;
+    private int consumeMessageBatchMaxSize = 1;/* 默认 每次消费一个 */
 
     /**
      * Batch pull size
@@ -301,7 +301,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * @param consumerGroup Consumer group.
      */
     public DefaultMQPushConsumer(final String consumerGroup) {
-        this(null, consumerGroup, null, new AllocateMessageQueueAveragely());
+        this(null, consumerGroup, null, new AllocateMessageQueueAveragely());/* 消费组内实例 平均分配 消息队列 */
     }
 
     /**
@@ -360,7 +360,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         this.consumerGroup = consumerGroup;
         this.namespace = namespace;
         this.allocateMessageQueueStrategy = allocateMessageQueueStrategy;
-        defaultMQPushConsumerImpl = new DefaultMQPushConsumerImpl(this, rpcHook);
+        defaultMQPushConsumerImpl = new DefaultMQPushConsumerImpl(this, rpcHook); /* 消费实现类 */
     }
 
     /**
@@ -734,7 +734,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     @Override
     public void start() throws MQClientException {
         setConsumerGroup(NamespaceUtil.wrapNamespace(this.getNamespace(), this.consumerGroup));
-        this.defaultMQPushConsumerImpl.start();
+        this.defaultMQPushConsumerImpl.start();/* 启动消费者 - 创建netty通讯客户端，拉取topic路由，执行分区重平衡，拉取消息，各种定时器 */
         if (null != traceDispatcher) {
             try {
                 traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());
@@ -794,7 +794,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      */
     @Override
     public void subscribe(String topic, String subExpression) throws MQClientException {
-        this.defaultMQPushConsumerImpl.subscribe(withNamespace(topic), subExpression);
+        this.defaultMQPushConsumerImpl.subscribe(withNamespace(topic), subExpression);/* 订阅主题 */
     }
 
     /**

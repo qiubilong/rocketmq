@@ -57,7 +57,7 @@ import org.apache.rocketmq.remoting.protocol.header.ResetOffsetRequestHeader;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
-public class ClientRemotingProcessor implements NettyRequestProcessor {
+public class ClientRemotingProcessor implements NettyRequestProcessor { /* 客户端通讯处理器 */
     private final Logger logger = LoggerFactory.getLogger(ClientRemotingProcessor.class);
     private final MQClientInstance mqClientFactory;
 

@@ -96,22 +96,22 @@ public class MQClientInstance {
     /**
      * The container of the producer in the current client. The key is the name of producerGroup.
      */
-    private final ConcurrentMap<String, MQProducerInner> producerTable = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String/* group */, MQProducerInner> producerTable = new ConcurrentHashMap<>();/* 生产者集合 */
 
     /**
      * The container of the consumer in the current client. The key is the name of consumerGroup.
      */
-    private final ConcurrentMap<String, MQConsumerInner> consumerTable = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String/* group */, MQConsumerInner> consumerTable = new ConcurrentHashMap<>();/* 消费者集合 */
 
     /**
      * The container of the adminExt in the current client. The key is the name of adminExtGroup.
      */
     private final ConcurrentMap<String, MQAdminExtInner> adminExtTable = new ConcurrentHashMap<>();
     private final NettyClientConfig nettyClientConfig;
-    private final MQClientAPIImpl mQClientAPIImpl;
+    private final MQClientAPIImpl mQClientAPIImpl; /* netty通讯客户端 */
     private final MQAdminImpl mQAdminImpl;
-    private final ConcurrentMap<String/* Topic */, TopicRouteData> topicRouteTable = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String/* Topic */, ConcurrentMap<MessageQueue, String/*brokerName*/>> topicEndPointsTable = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String/* Topic */, TopicRouteData> topicRouteTable = new ConcurrentHashMap<>();/* Topic路由信息 */
+    private final ConcurrentMap<String/* Topic */, ConcurrentMap<MessageQueue, String/*brokerName*/>> topicEndPointsTable = new ConcurrentHashMap<>();/* topic所在Broker的地址 */
     private final Lock lockNamesrv = new ReentrantLock();
     private final Lock lockHeartbeat = new ReentrantLock();
 
@@ -132,8 +132,8 @@ public class MQClientInstance {
             return new Thread(r, "MQClientFactoryFetchRemoteConfigScheduledThread");
         }
     });
-    private final PullMessageService pullMessageService;
-    private final RebalanceService rebalanceService;
+    private final PullMessageService pullMessageService; /* 消费者 - 消息拉取 - 工作线程 */
+    private final RebalanceService rebalanceService;    /* 消费者 - topic分区消费-重平衡 - 工作线程 */
     private final DefaultMQProducer defaultMQProducer;
     private final ConsumerStatsManager consumerStatsManager;
     private final AtomicLong sendHeartbeatTimesTotal = new AtomicLong(0);
@@ -143,18 +143,18 @@ public class MQClientInstance {
     public MQClientInstance(ClientConfig clientConfig, int instanceIndex, String clientId) {
         this(clientConfig, instanceIndex, clientId, null);
     }
-
+    /*  创建客户端实例 */
     public MQClientInstance(ClientConfig clientConfig, int instanceIndex, String clientId, RPCHook rpcHook) {
         this.clientConfig = clientConfig;
         this.nettyClientConfig = new NettyClientConfig();
         this.nettyClientConfig.setClientCallbackExecutorThreads(clientConfig.getClientCallbackExecutorThreads());
         this.nettyClientConfig.setUseTLS(clientConfig.isUseTLS());
         this.nettyClientConfig.setSocksProxyConfig(clientConfig.getSocksProxyConfig());
-        ClientRemotingProcessor clientRemotingProcessor = new ClientRemotingProcessor(this);
-        this.mQClientAPIImpl = new MQClientAPIImpl(this.nettyClientConfig, clientRemotingProcessor, rpcHook, clientConfig);
+        ClientRemotingProcessor clientRemotingProcessor = new ClientRemotingProcessor(this);/* 客户端通讯处理器 */
+        this.mQClientAPIImpl = new MQClientAPIImpl(this.nettyClientConfig, clientRemotingProcessor, rpcHook, clientConfig);/* 创建netty通讯客户端 */
 
         if (this.clientConfig.getNamesrvAddr() != null) {
-            this.mQClientAPIImpl.updateNameServerAddressList(this.clientConfig.getNamesrvAddr());
+            this.mQClientAPIImpl.updateNameServerAddressList(this.clientConfig.getNamesrvAddr());/* 指定注册中心nameServer地址 */
             log.info("user specified name server address: {}", this.clientConfig.getNamesrvAddr());
         }
 
@@ -162,9 +162,9 @@ public class MQClientInstance {
 
         this.mQAdminImpl = new MQAdminImpl(this);
 
-        this.pullMessageService = new PullMessageService(this);
+        this.pullMessageService = new PullMessageService(this); /* ## 消费者 - 异步拉取消息 - 工作线程 */
 
-        this.rebalanceService = new RebalanceService(this);
+        this.rebalanceService = new RebalanceService(this);     /* ## 消费者 - 分区消费重平衡 - 工作线程 */
 
         this.defaultMQProducer = new DefaultMQProducer(MixAll.CLIENT_INNER_PRODUCER_GROUP);
         this.defaultMQProducer.resetClientConfig(clientConfig);
@@ -975,8 +975,8 @@ public class MQClientInstance {
         for (Map.Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
             MQConsumerInner impl = entry.getValue();
             if (impl != null) {
-                try {
-                    impl.doRebalance();
+                try {//旧版本加锁，保证重平衡一致性。新版本使用 排序参数&相同算法 得出相同结果，再加重平衡版本，保证一致性
+                    impl.doRebalance();/* 消费者分区重平衡- DefaultMQPushConsumerImpl */
                 } catch (Throwable e) {
                     log.error("doRebalance exception", e);
                 }

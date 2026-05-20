@@ -33,12 +33,12 @@ public class Consumer {
 
     public static void main(String[] args) throws MQClientException {
 
-        /*
+        /**
          * Instantiate with specified consumer group name.
          */
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(CONSUMER_GROUP);
 
-        /*
+        /**
          * Specify name server addresses.
          * <p/>
          *
@@ -52,25 +52,25 @@ public class Consumer {
         // Uncomment the following line while debugging, namesrvAddr should be set to your local address
         // consumer.setNamesrvAddr(DEFAULT_NAMESRVADDR);
 
-        /*
+        /**
          * Specify where to start in case the specific consumer group is a brand-new one.
          */
-        consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
+        consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);//指定消费偏移量
 
-        /*
+        /**
          * Subscribe one more topic to consume.
          */
-        consumer.subscribe(TOPIC, "*");
+        consumer.subscribe(TOPIC, "*");  //订阅主题
 
-        /*
+        /**
          *  Register callback to execute on arrival of messages fetched from brokers.
          */
-        consumer.registerMessageListener((MessageListenerConcurrently) (msg, context) -> {
+        consumer.registerMessageListener((MessageListenerConcurrently) (msg, context) -> {  //消息监听器
             System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msg);
             return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
         });
 
-        /*
+        /**
          *  Launch the consumer instance.
          */
         consumer.start();

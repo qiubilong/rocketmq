@@ -28,9 +28,9 @@ import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
-public class PullMessageService extends ServiceThread {
+public class PullMessageService extends ServiceThread {/* 循环拉取Broker消息 - 工作线程 */
     private final Logger logger = LoggerFactory.getLogger(PullMessageService.class);
-    private final LinkedBlockingQueue<MessageRequest> messageRequestQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<MessageRequest> messageRequestQueue = new LinkedBlockingQueue<>();/* 拉取消息 - 异步请求队列 */
 
     private final MQClientInstance mQClientFactory;
     private final ScheduledExecutorService scheduledExecutorService = Executors
@@ -55,7 +55,7 @@ public class PullMessageService extends ServiceThread {
 
     public void executePullRequestImmediately(final PullRequest pullRequest) {
         try {
-            this.messageRequestQueue.put(pullRequest);
+            this.messageRequestQueue.put(pullRequest);/* 拉取消息请求 */
         } catch (InterruptedException e) {
             logger.error("executePullRequestImmediately pullRequestQueue.put", e);
         }
@@ -98,7 +98,7 @@ public class PullMessageService extends ServiceThread {
         final MQConsumerInner consumer = this.mQClientFactory.selectConsumer(pullRequest.getConsumerGroup());
         if (consumer != null) {
             DefaultMQPushConsumerImpl impl = (DefaultMQPushConsumerImpl) consumer;
-            impl.pullMessage(pullRequest);
+            impl.pullMessage(pullRequest);/* 消费组 - 拉取消息 */
         } else {
             logger.warn("No matched consumer for the PullRequest {}, drop it", pullRequest);
         }
@@ -124,7 +124,7 @@ public class PullMessageService extends ServiceThread {
                 if (messageRequest.getMessageRequestMode() == MessageRequestMode.POP) {
                     this.popMessage((PopRequest) messageRequest);
                 } else {
-                    this.pullMessage((PullRequest) messageRequest);
+                    this.pullMessage((PullRequest) messageRequest);/* 循环向Broker 拉取消费消息 */
                 }
             } catch (InterruptedException ignored) {
             } catch (Exception e) {

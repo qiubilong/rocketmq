@@ -238,9 +238,9 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
     }
 
-    private final RemotingClient remotingClient;
+    private final RemotingClient remotingClient;/* 创建 netty客户端 */
     private final TopAddressing topAddressing;
-    private final ClientRemotingProcessor clientRemotingProcessor;
+    private final ClientRemotingProcessor clientRemotingProcessor;/* 命令处理器 - ClientRemotingProcessor */
     private String nameSrvAddr = null;
     private ClientConfig clientConfig;
 
@@ -250,7 +250,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         this.clientConfig = clientConfig;
         topAddressing = new DefaultTopAddressing(MixAll.getWSAddr(), clientConfig.getUnitName());
         topAddressing.registerChangeCallBack(this);
-        this.remotingClient = new NettyRemotingClient(nettyClientConfig, null);
+        this.remotingClient = new NettyRemotingClient(nettyClientConfig, null);/* 1、创建 netty客户端 */
         this.clientRemotingProcessor = clientRemotingProcessor;
 
         // Inject stream rpc hook first to make reserve field signature
@@ -258,8 +258,8 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
             this.remotingClient.registerRPCHook(new StreamTypeRPCHook());
         }
         this.remotingClient.registerRPCHook(rpcHook);
-        this.remotingClient.registerRPCHook(new DynamicalExtFieldRPCHook());
-        this.remotingClient.registerProcessor(RequestCode.CHECK_TRANSACTION_STATE, this.clientRemotingProcessor, null);
+        this.remotingClient.registerRPCHook(new DynamicalExtFieldRPCHook()); /* 2、注册 - 收到请求命令处理器 */
+        this.remotingClient.registerProcessor(RequestCode.CHECK_TRANSACTION_STATE, this.clientRemotingProcessor, null); /* 半事务消息回查 */
 
         this.remotingClient.registerProcessor(RequestCode.NOTIFY_CONSUMER_IDS_CHANGED, this.clientRemotingProcessor, null);
 
