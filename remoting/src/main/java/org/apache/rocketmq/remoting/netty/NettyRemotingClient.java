@@ -185,7 +185,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
             this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(
                 nettyClientConfig.getClientWorkerThreads(),
                 new ThreadFactoryImpl("NettyClientWorkerThread_"));
-        }
+        }/* 设置客户端Channel通道配置 */
         Bootstrap handler = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)
             .option(ChannelOption.TCP_NODELAY, true)
             .option(ChannelOption.SO_KEEPALIVE, false)
@@ -207,8 +207,8 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                         new NettyEncoder(),
                         new NettyDecoder(),
                         new IdleStateHandler(0, 0, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()),
-                        new NettyConnectManageHandler(),
-                        new NettyClientHandler());
+                        new NettyConnectManageHandler(), /* 连接管理处理器 */
+                        new NettyClientHandler());      /* 客户端业务处理器 */
                 }
             });
         if (nettyClientConfig.getClientSocketSndBufSize() > 0) {

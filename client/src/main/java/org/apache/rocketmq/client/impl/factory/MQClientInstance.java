@@ -266,15 +266,15 @@ public class MQClientInstance {
                         this.mQClientAPIImpl.fetchNameServerAddr();
                     }
                     // Start request-response channel
-                    this.mQClientAPIImpl.start();
+                    this.mQClientAPIImpl.start();/* 设置netty BootStrap Channel配置 */
                     // Start various schedule tasks
-                    this.startScheduledTask();
+                    this.startScheduledTask(); /* 各种定时任务 - 拉取topic路由，consumer心跳保活 */
                     // Start pull service
-                    this.pullMessageService.start();
+                    this.pullMessageService.start();/* 启动-消费者 -  拉取消息线程 - PullMessageService */
                     // Start rebalance service
-                    this.rebalanceService.start();
+                    this.rebalanceService.start();/* 启动-消费者 - topic分区重平衡 -线程  - RebalanceService */
                     // Start push service
-                    this.defaultMQProducer.getDefaultMQProducerImpl().start(false);
+                    this.defaultMQProducer.getDefaultMQProducerImpl().start(false); //启动消费者内部 producer，因为会用它来发送重试消息？
                     log.info("the client factory [{}] start OK", this.clientId);
                     this.serviceState = ServiceState.RUNNING;
                     break;
