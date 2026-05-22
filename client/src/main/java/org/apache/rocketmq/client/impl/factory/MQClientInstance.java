@@ -299,7 +299,7 @@ public class MQClientInstance {
 
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
-                MQClientInstance.this.updateTopicRouteInfoFromNameServer();
+                MQClientInstance.this.updateTopicRouteInfoFromNameServer();/* 每30s从注册中心拉取topic信息 */
             } catch (Exception e) {
                 log.error("ScheduledTask updateTopicRouteInfoFromNameServer exception", e);
             }
@@ -308,7 +308,7 @@ public class MQClientInstance {
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 MQClientInstance.this.cleanOfflineBroker();
-                MQClientInstance.this.sendHeartbeatToAllBrokerWithLock();
+                MQClientInstance.this.sendHeartbeatToAllBrokerWithLock();/* 每30s往 Broker发送心跳保活（消费者端带订阅信息） */
             } catch (Exception e) {
                 log.error("ScheduledTask sendHeartbeatToAllBroker exception", e);
             }
@@ -316,7 +316,7 @@ public class MQClientInstance {
 
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
-                MQClientInstance.this.persistAllConsumerOffset();
+                MQClientInstance.this.persistAllConsumerOffset();/* 每5s更新消费偏移 */
             } catch (Exception e) {
                 log.error("ScheduledTask persistAllConsumerOffset exception", e);
             }
@@ -365,7 +365,7 @@ public class MQClientInstance {
         }
 
         for (String topic : topicList) {
-            this.updateTopicRouteInfoFromNameServer(topic);
+            this.updateTopicRouteInfoFromNameServer(topic);/* 拉取topic分区和路由信息 */
         }
     }
 
@@ -526,7 +526,7 @@ public class MQClientInstance {
     }
 
     public boolean updateTopicRouteInfoFromNameServer(final String topic) {
-        return updateTopicRouteInfoFromNameServer(topic, false, null);
+        return updateTopicRouteInfoFromNameServer(topic, false, null);/* 拉取topic分区和路由信息 */
     }
 
     private boolean isBrokerAddrExistInTopicRouteTable(final String addr) {
@@ -688,7 +688,7 @@ public class MQClientInstance {
                                 data.setWriteQueueNums(queueNums);
                             }
                         }
-                    } else {
+                    } else {                                  /* 查询topic分区和路由信息 */
                         topicRouteData = this.mQClientAPIImpl.getTopicRouteInfoFromNameServer(topic, clientConfig.getMqClientApiTimeout());
                     }
                     if (topicRouteData != null) {
@@ -702,7 +702,7 @@ public class MQClientInstance {
 
                         if (changed) {
 
-                            for (BrokerData bd : topicRouteData.getBrokerDatas()) {
+                            for (BrokerData bd : topicRouteData.getBrokerDatas()) {/* 更新Broker地址 */
                                 this.brokerAddrTable.put(bd.getBrokerName(), bd.getBrokerAddrs());
                             }
 
@@ -721,7 +721,7 @@ public class MQClientInstance {
                                 for (Entry<String, MQProducerInner> entry : this.producerTable.entrySet()) {
                                     MQProducerInner impl = entry.getValue();
                                     if (impl != null) {
-                                        impl.updateTopicPublishInfo(topic, publishInfo);
+                                        impl.updateTopicPublishInfo(topic, publishInfo);/* 更新 - producer - topic分区和路由信息 */
                                     }
                                 }
                             }
@@ -732,7 +732,7 @@ public class MQClientInstance {
                                 for (Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
                                     MQConsumerInner impl = entry.getValue();
                                     if (impl != null) {
-                                        impl.updateTopicSubscribeInfo(topic, subscribeInfo);
+                                        impl.updateTopicSubscribeInfo(topic, subscribeInfo);/* 更新 - consumer - topic分区消息队列 */
                                     }
                                 }
                             }

@@ -24,14 +24,14 @@ import org.apache.rocketmq.remoting.InvokeCallback;
 import org.apache.rocketmq.remoting.common.SemaphoreReleaseOnlyOnce;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
-public class ResponseFuture {
+public class ResponseFuture { /* 异步 请求响应 */
     private final Channel channel;
     private final int opaque;
     private final RemotingCommand request;
     private final long timeoutMillis;
     private final InvokeCallback invokeCallback;
     private final long beginTimestamp = System.currentTimeMillis();
-    private final CountDownLatch countDownLatch = new CountDownLatch(1);
+    private final CountDownLatch countDownLatch = new CountDownLatch(1); /* 等待响应 */
 
     private final SemaphoreReleaseOnlyOnce once;
 
@@ -81,13 +81,13 @@ public class ResponseFuture {
     }
 
     public RemotingCommand waitResponse(final long timeoutMillis) throws InterruptedException {
-        this.countDownLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
+        this.countDownLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);/* 等待响应 */
         return this.responseCommand;
     }
 
     public void putResponse(final RemotingCommand responseCommand) {
         this.responseCommand = responseCommand;
-        this.countDownLatch.countDown();
+        this.countDownLatch.countDown();/* 唤醒等待响应线程 */
     }
 
     public long getBeginTimestamp() {

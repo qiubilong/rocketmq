@@ -468,11 +468,11 @@ public abstract class NettyRemotingAbstract {
         final long timeoutMillis)
         throws InterruptedException, RemotingSendRequestException, RemotingTimeoutException {
         //get the request id
-        final int opaque = request.getOpaque();
+        final int opaque = request.getOpaque();/* 请求ID */
 
         try {
             final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, timeoutMillis, null, null);
-            this.responseTable.put(opaque, responseFuture);
+            this.responseTable.put(opaque, responseFuture);/* 1、添加异步等待请求响应标记 */
             final SocketAddress addr = channel.remoteAddress();
             channel.writeAndFlush(request).addListener((ChannelFutureListener) f -> {
                 if (f.isSuccess()) {
@@ -487,7 +487,7 @@ public abstract class NettyRemotingAbstract {
                 log.warn("Failed to write a request command to {}, caused by underlying I/O operation failure", addr);
             });
 
-            RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);
+            RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);/* 等待响应 */
             if (null == responseCommand) {
                 if (responseFuture.isSendRequestOK()) {
                     throw new RemotingTimeoutException(RemotingHelper.parseSocketAddressAddr(addr), timeoutMillis,
