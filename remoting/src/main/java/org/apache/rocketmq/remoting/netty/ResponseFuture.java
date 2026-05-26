@@ -29,14 +29,14 @@ public class ResponseFuture { /* 异步 请求响应 */
     private final int opaque;
     private final RemotingCommand request;
     private final long timeoutMillis;
-    private final InvokeCallback invokeCallback;
+    private final InvokeCallback invokeCallback;   /* 执行异步回调 - 例如 拉取消息响应处理器 */
     private final long beginTimestamp = System.currentTimeMillis();
     private final CountDownLatch countDownLatch = new CountDownLatch(1); /* 等待响应 */
 
     private final SemaphoreReleaseOnlyOnce once;
 
     private final AtomicBoolean executeCallbackOnlyOnce = new AtomicBoolean(false);
-    private volatile RemotingCommand responseCommand;
+    private volatile RemotingCommand responseCommand;  /* 响应结果 */
     private volatile boolean sendRequestOK = true;
     private volatile Throwable cause;
     private volatile boolean interrupted = false;

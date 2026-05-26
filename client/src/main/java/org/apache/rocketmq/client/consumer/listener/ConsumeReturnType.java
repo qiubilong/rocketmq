@@ -25,7 +25,7 @@ public enum ConsumeReturnType {
     /**
      * consume timeout ,even if success
      */
-    TIME_OUT,
+    TIME_OUT,      /* 15分钟超时 */
     /**
      * consume throw exception
      */

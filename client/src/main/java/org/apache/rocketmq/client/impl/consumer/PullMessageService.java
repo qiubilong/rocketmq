@@ -40,7 +40,7 @@ public class PullMessageService extends ServiceThread {/* 循环拉取Broker消�
         this.mQClientFactory = mQClientFactory;
     }
 
-    public void executePullRequestLater(final PullRequest pullRequest, final long timeDelay) {
+    public void executePullRequestLater(final PullRequest pullRequest, final long timeDelay) { /* 添加拉取消息请求通知 */
         if (!isStopped()) {
             this.scheduledExecutorService.schedule(new Runnable() {
                 @Override

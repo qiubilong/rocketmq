@@ -28,7 +28,7 @@ import org.apache.rocketmq.common.MixAll;
  * The class describes that a typical broker cluster's (in replication) details: the cluster (in sharding) name
  * that it belongs to, and all the single instance information for this cluster.
  */
-public class BrokerData implements Comparable<BrokerData> {
+public class BrokerData implements Comparable<BrokerData> {/* brokerName 名字相同的 多台机器集群*/
     private String cluster;
     private String brokerName;
 
@@ -36,7 +36,7 @@ public class BrokerData implements Comparable<BrokerData> {
      * The container that store the all single instances for the current broker replication cluster.
      * The key is the brokerId, and the value is the address of the single broker instance.
      */
-    private HashMap<Long, String> brokerAddrs;
+    private HashMap<Long /* brokerId */, String /* broker address */ > brokerAddrs;  /* brokerId=0 是主节点 */
     private String zoneName;
     private final Random random = new Random();
 
@@ -88,7 +88,7 @@ public class BrokerData implements Comparable<BrokerData> {
      *
      * @return Broker address.
      */
-    public String selectBrokerAddr() {
+    public String selectBrokerAddr() { /* 优先选择主节点 */
         String masterAddress = this.brokerAddrs.get(MixAll.MASTER_ID);
 
         if (masterAddress == null) {

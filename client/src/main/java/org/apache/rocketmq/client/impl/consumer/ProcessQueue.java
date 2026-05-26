@@ -38,7 +38,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 /**
  * Queue consumption snapshot
  */
-public class ProcessQueue {/* 消费者 - MessageQueue对应的 -  本地消息缓存队列 */
+public class ProcessQueue {/* 消费者 - MessageQueue对应的 -  本地缓存【消息分区队列】 */
     public final static long REBALANCE_LOCK_MAX_LIVE_TIME =
         Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockMaxLiveTime", "30000"));
     public final static long REBALANCE_LOCK_INTERVAL = Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockInterval", "20000"));
@@ -128,7 +128,7 @@ public class ProcessQueue {/* 消费者 - MessageQueue对应的 -  本地消息�
         }
     }
 
-    public boolean putMessage(final List<MessageExt> msgs) {
+    public boolean putMessage(final List<MessageExt> msgs) { /* 缓存 - 拉取成功的消息 */
         boolean dispatchToConsume = false;
         try {
             this.treeMapLock.writeLock().lockInterruptibly();
@@ -138,7 +138,7 @@ public class ProcessQueue {/* 消费者 - MessageQueue对应的 -  本地消息�
                     MessageExt old = msgTreeMap.put(msg.getQueueOffset(), msg);
                     if (null == old) {
                         validMsgCnt++;
-                        this.queueOffsetMax = msg.getQueueOffset();
+                        this.queueOffsetMax = msg.getQueueOffset();/* ## 记录拉取消息最大偏移 */
                         msgSize.addAndGet(msg.getBody().length);
                     }
                 }
@@ -186,7 +186,7 @@ public class ProcessQueue {/* 消费者 - MessageQueue对应的 -  本地消息�
         return 0;
     }
 
-    public long removeMessage(final List<MessageExt> msgs) {
+    public long removeMessage(final List<MessageExt> msgs) {/* 消费消息成功 - 移除本地缓存 */
         long result = -1;
         final long now = System.currentTimeMillis();
         try {
@@ -206,7 +206,7 @@ public class ProcessQueue {/* 消费者 - MessageQueue对应的 -  本地消息�
                     msgCount.addAndGet(removedCnt);
 
                     if (!msgTreeMap.isEmpty()) {
-                        result = msgTreeMap.firstKey();
+                        result = msgTreeMap.firstKey();/* ## 修正最小消费偏移，防止并发消费情况下后offset的先消费 */
                     }
                 }
             } finally {

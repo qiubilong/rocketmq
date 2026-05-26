@@ -173,7 +173,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Concurrently max span offset.it has no effect on sequential consumption
      */
-    private int consumeConcurrentlyMaxSpan = 2000;
+    private int consumeConcurrentlyMaxSpan = 2000;  /* 拉取流控 - 消息偏移offset 最大距离 */
 
     /**
      * Flow control threshold on queue level, each message queue will cache at most 1000 messages by default,
@@ -194,7 +194,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * <p>
      * The size(MB) of a message only measured by message body, so it's not accurate
      */
-    private int pullThresholdSizeForQueue = 100; // 流控 - 消息队列维护 - 消息字节大小
+    private int pullThresholdSizeForQueue = 100; // 流控 - 消息队列维护 - 缓存消息队列大小 100Mb
 
     /**
      * Flow control threshold on topic level, default value is -1(Unlimited)
@@ -221,7 +221,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Message pull Interval
      */
-    private long pullInterval = 0;
+    private long pullInterval = 0; //拉取消息间隔
 
     /**
      * Batch consumption size
@@ -737,7 +737,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         this.defaultMQPushConsumerImpl.start();/* 启动消费者 - 创建netty通讯客户端，拉取topic路由，执行分区重平衡，拉取消息，各种定时器 */
         if (null != traceDispatcher) {
             try {
-                traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());
+                traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());//消息轨迹，需要 broker 和客户端 同时配置开启
             } catch (MQClientException e) {
                 log.warn("trace dispatcher start failed ", e);
             }

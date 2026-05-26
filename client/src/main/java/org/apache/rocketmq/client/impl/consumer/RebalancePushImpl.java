@@ -59,7 +59,7 @@ public class RebalancePushImpl extends RebalanceImpl {
         SubscriptionData subscriptionData = this.subscriptionInner.get(topic);
         long newVersion = System.currentTimeMillis();
         log.info("{} Rebalance changed, also update version: {}, {}", topic, subscriptionData.getSubVersion(), newVersion);
-        subscriptionData.setSubVersion(newVersion);
+        subscriptionData.setSubVersion(newVersion);/* ## 更新订阅分区（重平衡）版本号 --> 解决分区重新平衡一致性问题 */
 
         int currentQueueCount = this.processQueueTable.size();
         if (currentQueueCount != 0) {
@@ -81,19 +81,19 @@ public class RebalancePushImpl extends RebalanceImpl {
         }
 
         // notify broker
-        this.getmQClientFactory().sendHeartbeatToAllBrokerWithLockV2(true);
+        this.getmQClientFactory().sendHeartbeatToAllBrokerWithLockV2(true); /* ## 通知Broker最新分区结果 */
     }
 
     @Override
     public boolean removeUnnecessaryMessageQueue(MessageQueue mq, ProcessQueue pq) {
-        this.defaultMQPushConsumerImpl.getOffsetStore().persist(mq);
+        this.defaultMQPushConsumerImpl.getOffsetStore().persist(mq);      /* 持久化消费偏移 */
         this.defaultMQPushConsumerImpl.getOffsetStore().removeOffset(mq);
         if (this.defaultMQPushConsumerImpl.isConsumeOrderly()
             && MessageModel.CLUSTERING.equals(this.defaultMQPushConsumerImpl.messageModel())) {
             try {
                 if (pq.getConsumeLock().tryLock(1000, TimeUnit.MILLISECONDS)) {
                     try {
-                        return this.unlockDelay(mq, pq);
+                        return this.unlockDelay(mq, pq);/* 如果是顺序消费，则 移除  - 消息队列 -  锁定状态 */
                     } finally {
                         pq.getConsumeLock().unlock();
                     }
@@ -263,7 +263,7 @@ public class RebalancePushImpl extends RebalanceImpl {
             if (delay <= 0) {
                 this.defaultMQPushConsumerImpl.executePullRequestImmediately(pullRequest);
             } else {
-                this.defaultMQPushConsumerImpl.executePullRequestLater(pullRequest, delay);
+                this.defaultMQPushConsumerImpl.executePullRequestLater(pullRequest, delay);/* 拉取消息请求 */
             }
         }
     }

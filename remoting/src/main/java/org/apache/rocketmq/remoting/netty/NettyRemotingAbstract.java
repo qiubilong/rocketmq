@@ -76,7 +76,7 @@ public abstract class NettyRemotingAbstract {
     /**
      * Semaphore to limit maximum number of on-going one-way requests, which protects system memory footprint.
      */
-    protected final Semaphore semaphoreOneway;
+    protected final Semaphore semaphoreOneway; /* 限流 - 65535 */
 
     /**
      * Semaphore to limit maximum number of on-going asynchronous requests, which protects system memory footprint.
@@ -86,14 +86,14 @@ public abstract class NettyRemotingAbstract {
     /**
      * This map caches all on-going requests.
      */
-    protected final ConcurrentMap<Integer /* opaque */, ResponseFuture> responseTable =
+    protected final ConcurrentMap<Integer /* opaque */, ResponseFuture> responseTable =   /* 等待响应的请求集合 */
         new ConcurrentHashMap<>(256);
 
     /**
      * This container holds all processors per request code, aka, for each incoming request, we may look up the
      * responding processor in this map to handle the request.
      */
-    protected final HashMap<Integer/* request code */, Pair<NettyRequestProcessor, ExecutorService>> processorTable =
+    protected final HashMap<Integer/* request code */, Pair<NettyRequestProcessor, ExecutorService>> processorTable =  /* 请求处理器 */
         new HashMap<>(64);
 
     /**
@@ -105,7 +105,7 @@ public abstract class NettyRemotingAbstract {
      * The default request processor to use in case there is no exact match in {@link #processorTable} per request
      * code.
      */
-    protected Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessorPair;
+    protected Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessorPair; /* 默认请求处理器 nameServer=DefaultRequestProcessor, broker=AdminBrokerProcessor */
 
     /**
      * SSL context via which to create {@link SslHandler}.
@@ -167,10 +167,10 @@ public abstract class NettyRemotingAbstract {
         if (msg != null) {
             switch (msg.getType()) {
                 case REQUEST_COMMAND:
-                    processRequestCommand(ctx, msg);
+                    processRequestCommand(ctx, msg); /* 处理请求 */
                     break;
                 case RESPONSE_COMMAND:
-                    processResponseCommand(ctx, msg);
+                    processResponseCommand(ctx, msg);/* 处理响应结果，唤醒阻塞线程 - 例如 拉取消息响应 */
                     break;
                 default:
                     break;
@@ -354,16 +354,16 @@ public abstract class NettyRemotingAbstract {
      */
     public void processResponseCommand(ChannelHandlerContext ctx, RemotingCommand cmd) {
         final int opaque = cmd.getOpaque();
-        final ResponseFuture responseFuture = responseTable.get(opaque);
+        final ResponseFuture responseFuture = responseTable.get(opaque); /* 获取请求等待响应对象 */
         if (responseFuture != null) {
-            responseFuture.setResponseCommand(cmd);
+            responseFuture.setResponseCommand(cmd);/* 设置请求处理结果 */
 
             responseTable.remove(opaque);
 
             if (responseFuture.getInvokeCallback() != null) {
-                executeInvokeCallback(responseFuture);
+                executeInvokeCallback(responseFuture);  /* 执行异步回调 - 例如 拉取消息响应处理器 */
             } else {
-                responseFuture.putResponse(cmd);
+                responseFuture.putResponse(cmd);/* 唤醒请求阻塞线程 */
                 responseFuture.release();
             }
         } else {
@@ -507,8 +507,8 @@ public abstract class NettyRemotingAbstract {
         final InvokeCallback invokeCallback)
         throws InterruptedException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException {
         long beginStartTime = System.currentTimeMillis();
-        final int opaque = request.getOpaque();
-        boolean acquired = this.semaphoreAsync.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
+        final int opaque = request.getOpaque();/* 请求ID */
+        boolean acquired = this.semaphoreAsync.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);// 限流 65535
         if (acquired) {
             final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreAsync);
             long costTime = System.currentTimeMillis() - beginStartTime;
@@ -518,7 +518,7 @@ public abstract class NettyRemotingAbstract {
             }
 
             final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, timeoutMillis - costTime, invokeCallback, once);
-            this.responseTable.put(opaque, responseFuture);
+            this.responseTable.put(opaque, responseFuture); /* 关联 请求 - 响应 */
             try {
                 channel.writeAndFlush(request).addListener((ChannelFutureListener) f -> {
                     if (f.isSuccess()) {

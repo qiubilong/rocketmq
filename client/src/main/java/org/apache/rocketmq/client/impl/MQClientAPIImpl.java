@@ -840,7 +840,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                 assert false;
                 return null;
             case ASYNC:
-                this.pullMessageAsync(addr, request, timeoutMillis, pullCallback);
+                this.pullMessageAsync(addr, request, timeoutMillis, pullCallback);/* 异步拉取消息 */
                 return null;
             case SYNC:
                 return this.pullMessageSync(addr, request, timeoutMillis);
@@ -1049,14 +1049,14 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                     try {
                         PullResult pullResult = MQClientAPIImpl.this.processPullResponse(response, addr);
                         assert pullResult != null;
-                        pullCallback.onSuccess(pullResult);
+                        pullCallback.onSuccess(pullResult); /* 拉取消息成功 */
                     } catch (Exception e) {
                         pullCallback.onException(e);
                     }
                 } else {
                     if (!responseFuture.isSendRequestOK()) {
                         pullCallback.onException(new MQClientException(ClientErrorCode.CONNECT_BROKER_EXCEPTION, "send request failed to " + addr + ". Request: " + request, responseFuture.getCause()));
-                    } else if (responseFuture.isTimeout()) {
+                    } else if (responseFuture.isTimeout()) {/* 请求超时，继续拉取消息 */
                         pullCallback.onException(new MQClientException(ClientErrorCode.ACCESS_BROKER_TIMEOUT, "wait response from " + addr + " timeout :" + responseFuture.getTimeoutMillis() + "ms" + ". Request: " + request,
                             responseFuture.getCause()));
                     } else {
@@ -1626,7 +1626,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setOriginMsgId(msg.getMsgId());
         requestHeader.setMaxReconsumeTimes(maxConsumeRetryTimes);
         requestHeader.setBname(brokerName);
-
+        /* 消费失败消息，转存重试队列 */
         RemotingCommand response = this.remotingClient.invokeSync(MixAll.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;

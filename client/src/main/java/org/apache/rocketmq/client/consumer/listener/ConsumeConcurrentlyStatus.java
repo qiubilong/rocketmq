@@ -24,5 +24,5 @@ public enum ConsumeConcurrentlyStatus {
     /**
      * Failure consumption,later try to consume
      */
-    RECONSUME_LATER;
+    RECONSUME_LATER;  /* 默认 - 消费（失败）重试 */
 }

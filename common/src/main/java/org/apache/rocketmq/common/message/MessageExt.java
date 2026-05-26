@@ -29,19 +29,19 @@ public class MessageExt extends Message {
 
     private String brokerName;
 
-    private int queueId;
+    private int queueId;                /* 消息目标分区Id */
 
     private int storeSize;
 
-    private long queueOffset;
+    private long queueOffset;          /* 消息分区偏移量 */
     private int sysFlag;
     private long bornTimestamp;
     private SocketAddress bornHost;
 
     private long storeTimestamp;
     private SocketAddress storeHost;
-    private String msgId;
-    private long commitLogOffset;
+    private String msgId;             /* 消息ID */
+    private long commitLogOffset;     /* 消息存储偏移量 */
     private int bodyCRC;
     private int reconsumeTimes;
 

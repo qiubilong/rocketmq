@@ -32,7 +32,7 @@ public class SubscriptionData implements Comparable<SubscriptionData> {/* 消费
     private String subString;
     private Set<String> tagsSet = new HashSet<>();/* 订阅tag集合 */
     private Set<Integer> codeSet = new HashSet<>();
-    private long subVersion = System.currentTimeMillis();/* 订阅版本号 */
+    private long subVersion = System.currentTimeMillis();/* 订阅（重平衡）版本号 */
     private String expressionType = ExpressionType.TAG;
 
     @JSONField(serialize = false)

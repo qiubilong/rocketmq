@@ -192,7 +192,7 @@ public class PullAPIWrapper {
         final CommunicationMode communicationMode,
         final PullCallback pullCallback
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
-        FindBrokerResult findBrokerResult =
+        FindBrokerResult findBrokerResult =                  /* 查找Broker地址 */
             this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq),
                 this.recalculatePullFromWhichNode(mq), false);
         if (null == findBrokerResult) {
@@ -217,18 +217,18 @@ public class PullAPIWrapper {
             if (findBrokerResult.isSlave()) {
                 sysFlagInner = PullSysFlag.clearCommitOffsetFlag(sysFlagInner);
             }
-
+            /* ## 构建拉取消息报文 */
             PullMessageRequestHeader requestHeader = new PullMessageRequestHeader();
-            requestHeader.setConsumerGroup(this.consumerGroup);
-            requestHeader.setTopic(mq.getTopic());
-            requestHeader.setQueueId(mq.getQueueId());
-            requestHeader.setQueueOffset(offset);
-            requestHeader.setMaxMsgNums(maxNums);
+            requestHeader.setConsumerGroup(this.consumerGroup);     /* ## 消费组 */
+            requestHeader.setTopic(mq.getTopic());                  /* ## 主题 */
+            requestHeader.setQueueId(mq.getQueueId());              /* ## 主题分区 */
+            requestHeader.setQueueOffset(offset);                   /* ## 拉取消息偏移 */
+            requestHeader.setMaxMsgNums(maxNums);                   /* ## 默认拉取32个消息 */
             requestHeader.setSysFlag(sysFlagInner);
-            requestHeader.setCommitOffset(commitOffset);
+            requestHeader.setCommitOffset(commitOffset);            /* ## 已经消费的偏移 */
             requestHeader.setSuspendTimeoutMillis(brokerSuspendMaxTimeMillis);
             requestHeader.setSubscription(subExpression);
-            requestHeader.setSubVersion(subVersion);
+            requestHeader.setSubVersion(subVersion);               /* ## 订阅分区版本 --> 解决分区重平衡一致性 */
             requestHeader.setMaxMsgBytes(maxSizeInBytes);
             requestHeader.setExpressionType(expressionType);
             requestHeader.setBname(mq.getBrokerName());

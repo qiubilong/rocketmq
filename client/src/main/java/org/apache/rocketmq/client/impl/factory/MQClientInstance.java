@@ -120,7 +120,7 @@ public class MQClientInstance {
      * And the value is the broker instance list that belongs to the broker cluster.
      * For the sub map, the key is the id of single broker instance, and the value is the address.
      */
-    private final ConcurrentMap<String, HashMap<Long, String>> brokerAddrTable = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String /* Broker Name */, HashMap<Long /* brokerId */, String /* address */>> brokerAddrTable = new ConcurrentHashMap<>(); /* topic所在Broker的地址 */
 
     private final ConcurrentMap<String/* Broker Name */, HashMap<String/* address */, Integer>> brokerVersionTable = new ConcurrentHashMap<>();
     private final Set<String/* Broker address */> brokerSupportV2HeartbeatSet = new HashSet();
@@ -445,7 +445,7 @@ public class MQClientInstance {
                 }
                 // may need to check one broker every cluster...
                 // assume that the configs of every broker in cluster are the same.
-                String addr = findBrokerAddrByTopic(subscriptionData.getTopic());
+                String addr = findBrokerAddrByTopic(subscriptionData.getTopic());/* 优先选择主节点 */
 
                 if (addr != null) {
                     try {
@@ -546,7 +546,7 @@ public class MQClientInstance {
     }
 
     private void sendHeartbeatToAllBroker() {
-        final HeartbeatData heartbeatData = this.prepareHeartbeatData(false);
+        final HeartbeatData heartbeatData = this.prepareHeartbeatData(false);/* 1、构建心跳信息 - 带上最新的订阅版本号 */
         final boolean producerEmpty = heartbeatData.getProducerDataSet().isEmpty();
         final boolean consumerEmpty = heartbeatData.getConsumerDataSet().isEmpty();
         if (producerEmpty && consumerEmpty) {
@@ -564,18 +564,18 @@ public class MQClientInstance {
             if (oneTable == null) {
                 continue;
             }
-            for (Entry<Long, String> singleBrokerInstance : oneTable.entrySet()) {
+            for (Entry<Long, String> singleBrokerInstance : oneTable.entrySet()) {/* 2、遍历broker  */
                 Long id = singleBrokerInstance.getKey();
                 String addr = singleBrokerInstance.getValue();
                 if (addr == null) {
                     continue;
                 }
-                if (consumerEmpty && MixAll.MASTER_ID != id) {
+                if (consumerEmpty && MixAll.MASTER_ID != id) { // 筛选主节点
                     continue;
                 }
 
                 try {
-                    int version = this.mQClientAPIImpl.sendHeartbeat(addr, heartbeatData, clientConfig.getMqClientApiTimeout());
+                    int version = this.mQClientAPIImpl.sendHeartbeat(addr, heartbeatData, clientConfig.getMqClientApiTimeout()); /* 3、发送心跳  */
                     if (!this.brokerVersionTable.containsKey(brokerName)) {
                         this.brokerVersionTable.put(brokerName, new HashMap<>(4));
                     }
@@ -728,7 +728,7 @@ public class MQClientInstance {
 
                             // Update sub info
                             if (!consumerTable.isEmpty()) {
-                                Set<MessageQueue> subscribeInfo = topicRouteData2TopicSubscribeInfo(topic, topicRouteData);
+                                Set<MessageQueue> subscribeInfo = topicRouteData2TopicSubscribeInfo(topic, topicRouteData);// 所有的分区消息队列
                                 for (Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
                                     MQConsumerInner impl = entry.getValue();
                                     if (impl != null) {
@@ -774,12 +774,12 @@ public class MQClientInstance {
         for (Map.Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
             MQConsumerInner impl = entry.getValue();
             if (impl != null) {
-                ConsumerData consumerData = new ConsumerData();
+                ConsumerData consumerData = new ConsumerData();/* ## 消费端心跳信息 */
                 consumerData.setGroupName(impl.groupName());
                 consumerData.setConsumeType(impl.consumeType());
                 consumerData.setMessageModel(impl.messageModel());
                 consumerData.setConsumeFromWhere(impl.consumeFromWhere());
-                consumerData.getSubscriptionDataSet().addAll(impl.subscriptions());
+                consumerData.getSubscriptionDataSet().addAll(impl.subscriptions());/* ## （订阅消息）订阅版本号 */
                 consumerData.setUnitMode(impl.isUnitMode());
                 if (!isWithoutSub) {
                     consumerData.getSubscriptionDataSet().addAll(impl.subscriptions());
@@ -792,7 +792,7 @@ public class MQClientInstance {
         for (Map.Entry<String/* group */, MQProducerInner> entry : this.producerTable.entrySet()) {
             MQProducerInner impl = entry.getValue();
             if (impl != null) {
-                ProducerData producerData = new ProducerData();
+                ProducerData producerData = new ProducerData(); // 生产者心跳
                 producerData.setGroupName(entry.getKey());
 
                 heartbeatData.getProducerDataSet().add(producerData);
@@ -968,11 +968,11 @@ public class MQClientInstance {
     }
 
     public void rebalanceImmediately() {
-        this.rebalanceService.wakeup();
+        this.rebalanceService.wakeup(); /* 唤醒重平衡工作线程，执行doRebalance() */
     }
 
     public void doRebalance() {
-        for (Map.Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
+        for (Map.Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) { // 遍历消费者
             MQConsumerInner impl = entry.getValue();
             if (impl != null) {
                 try {//旧版本加锁，保证重平衡一致性。新版本使用 排序参数&相同算法 得出相同结果，再加重平衡版本，保证一致性
@@ -1130,7 +1130,7 @@ public class MQClientInstance {
             if (!brokers.isEmpty()) {
                 int index = random.nextInt(brokers.size());
                 BrokerData bd = brokers.get(index % brokers.size());
-                return bd.selectBrokerAddr();
+                return bd.selectBrokerAddr();/* 优先选择主节点 */
             }
         }
 
