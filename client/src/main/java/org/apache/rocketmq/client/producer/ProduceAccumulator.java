@@ -42,13 +42,13 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 
-public class ProduceAccumulator {
+public class ProduceAccumulator { /* 消息积攒器 - 满足任一条件时触发批量发送 - 多条消息被打包成一个 MessageBatch 一次性发给 Broker */
     // totalHoldSize normal value
-    private long totalHoldSize = 32 * 1024 * 1024;
+    private long totalHoldSize = 32 * 1024 * 1024; // 全局积攒超过 totalHoldSize（默认 32MB
     // holdSize normal value
-    private long holdSize = 32 * 1024;
+    private long holdSize = 32 * 1024; //积攒消息体总大小 ≥ holdSize（默认 32KB）
     // holdMs normal value
-    private int holdMs = 10;
+    private int holdMs = 10; /* 等待时间 ≥ holdMs（默认 10ms) */
     private final Logger log = LoggerFactory.getLogger(DefaultMQProducer.class);
     private final GuardForSyncSendService guardThreadForSyncSend;
     private final GuardForAsyncSendService guardThreadForAsyncSend;

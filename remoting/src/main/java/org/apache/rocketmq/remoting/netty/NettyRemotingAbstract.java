@@ -472,7 +472,7 @@ public abstract class NettyRemotingAbstract {
 
         try {
             final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, timeoutMillis, null, null);
-            this.responseTable.put(opaque, responseFuture);/* 1、添加异步等待请求响应标记 */
+            this.responseTable.put(opaque, responseFuture);/* 1、关联【请求-响应】对象  */
             final SocketAddress addr = channel.remoteAddress();
             channel.writeAndFlush(request).addListener((ChannelFutureListener) f -> {
                 if (f.isSuccess()) {

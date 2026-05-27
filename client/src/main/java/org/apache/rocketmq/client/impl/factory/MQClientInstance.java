@@ -182,7 +182,7 @@ public class MQClientInstance {
         TopicPublishInfo info = new TopicPublishInfo();
         // TO DO should check the usage of raw route, it is better to remove such field
         info.setTopicRouteData(route);
-        if (route.getOrderTopicConf() != null && route.getOrderTopicConf().length() > 0) {
+        if (route.getOrderTopicConf() != null && route.getOrderTopicConf().length() > 0) {/* 顺序topic */
             String[] brokers = route.getOrderTopicConf().split(";");
             for (String broker : brokers) {
                 String[] item = broker.split(":");
@@ -207,7 +207,7 @@ public class MQClientInstance {
             for (QueueData qd : qds) {
                 if (PermName.isWriteable(qd.getPerm())) {
                     BrokerData brokerData = null;
-                    for (BrokerData bd : route.getBrokerDatas()) {
+                    for (BrokerData bd : route.getBrokerDatas()) {/* 找到 topic所在broker */
                         if (bd.getBrokerName().equals(qd.getBrokerName())) {
                             brokerData = bd;
                             break;
@@ -218,11 +218,11 @@ public class MQClientInstance {
                         continue;
                     }
 
-                    if (!brokerData.getBrokerAddrs().containsKey(MixAll.MASTER_ID)) {
+                    if (!brokerData.getBrokerAddrs().containsKey(MixAll.MASTER_ID)) {/* 找到 topic所在broker 必须存在主节点 */
                         continue;
                     }
 
-                    for (int i = 0; i < qd.getWriteQueueNums(); i++) {
+                    for (int i = 0; i < qd.getWriteQueueNums(); i++) { /* 创建topic - 消息队列  */
                         MessageQueue mq = new MessageQueue(topic, qd.getBrokerName(), i);
                         info.getMessageQueueList().add(mq);
                     }
@@ -863,7 +863,7 @@ public class MQClientInstance {
                     this.serviceState = ServiceState.SHUTDOWN_ALREADY;
                     this.pullMessageService.shutdown(true);
                     this.scheduledExecutorService.shutdown();
-                    this.mQClientAPIImpl.shutdown();
+                    this.mQClientAPIImpl.shutdown(); /* 关闭 netty */
                     this.rebalanceService.shutdown();
 
                     MQClientManager.getInstance().removeClientFactory(this.clientId);

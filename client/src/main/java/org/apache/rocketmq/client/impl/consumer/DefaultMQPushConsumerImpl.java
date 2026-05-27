@@ -754,7 +754,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner { /* 消费者
             log.error("Failed to send message back, consumerGroup={}, brokerName={}, mq={}, message={}",
                 this.defaultMQPushConsumer.getConsumerGroup(), brokerName, mq, msg, t);
             if (needRetry) {
-                sendMessageBackAsNormalMessage(msg);
+                sendMessageBackAsNormalMessage(msg);// 降级路径
             }
         } finally {
             msg.setTopic(NamespaceUtil.withoutNamespace(msg.getTopic(), this.defaultMQPushConsumer.getNamespace()));

@@ -23,13 +23,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.common.UtilAll;
 
 public class MessageClientIDSetter {
-    
+
     private static final int LEN;
     private static final char[] FIX_STRING;
     private static final AtomicInteger COUNTER;
     private static long startTime;
     private static long nextStartTime;
-
+    /*  IP 地址         │  PID     │  ClassLoader.hashCode()  │  时间偏移(diff)【4B】   |   计数器 【2B】 */
     static {
         byte[] ip;
         try {
@@ -39,12 +39,12 @@ public class MessageClientIDSetter {
         }
         LEN = ip.length + 2 + 4 + 4 + 2;
         ByteBuffer tempBuffer = ByteBuffer.allocate(ip.length + 2 + 4);
-        tempBuffer.put(ip);
-        tempBuffer.putShort((short) UtilAll.getPid());
-        tempBuffer.putInt(MessageClientIDSetter.class.getClassLoader().hashCode());
+        tempBuffer.put(ip);                               /* 区分不同机器 */
+        tempBuffer.putShort((short) UtilAll.getPid());    /* 区分同机器不同进程 */
+        tempBuffer.putInt(MessageClientIDSetter.class.getClassLoader().hashCode()); /* 不同类加载 ---- Tomcat / Jetty 等 Web 容器部署多个 WAR - IP 相同、PID 相同，但三个类加载器的 hashCode 不同 */
         FIX_STRING = UtilAll.bytes2string(tempBuffer.array()).toCharArray();
-        setStartTime(System.currentTimeMillis());
-        COUNTER = new AtomicInteger(0);
+        setStartTime(System.currentTimeMillis());   /* 时间偏移  -- [当前时间 - 本月1号零点] -- 区分不同时间发出的消息，也支持从 msgId 反推发送时间 */
+        COUNTER = new AtomicInteger(0);  /* 计数器 - 区分同一毫秒内的多条消息 */
     }
 
     private synchronized static void setStartTime(long millis) {
@@ -55,9 +55,9 @@ public class MessageClientIDSetter {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
-        startTime = cal.getTimeInMillis();
+        startTime = cal.getTimeInMillis();/* 当月1号零点 */
         cal.add(Calendar.MONTH, 1);
-        nextStartTime = cal.getTimeInMillis();
+        nextStartTime = cal.getTimeInMillis();/* 下个月1号零点 */
     }
 
     public static Date getNearlyTimeFromID(String msgID) {
@@ -116,7 +116,7 @@ public class MessageClientIDSetter {
         System.arraycopy(FIX_STRING, 0, sb, 0, FIX_STRING.length);
         long current = System.currentTimeMillis();
         if (current >= nextStartTime) {
-            setStartTime(current);
+            setStartTime(current);/* 下个月 */
         }
         int diff = (int)(current - startTime);
         if (diff < 0 && diff > -1000_000) {
@@ -124,15 +124,15 @@ public class MessageClientIDSetter {
             diff = 0;
         }
         int pos = FIX_STRING.length;
-        UtilAll.writeInt(sb, pos, diff);
+        UtilAll.writeInt(sb, pos, diff); /* 4个字节（最大约49天） -- 毫秒时间差 ----  【当前时间 - 本月1号零点】 */
         pos += 8;
-        UtilAll.writeShort(sb, pos, COUNTER.getAndIncrement());
+        UtilAll.writeShort(sb, pos, COUNTER.getAndIncrement()); /* 2个字节 - 区分同一毫秒内的多条消息 - 【65536】 */
         return new String(sb);
     }
-
+    /* ip地址 + 进程号 + MessageClientIDSetter.hashCode() + 时间偏移 + 计数器 */
     public static void setUniqID(final Message msg) {
         if (msg.getProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX) == null) {
-            msg.putProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, createUniqID());
+            msg.putProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, createUniqID());/* UNIQ_KEY */
         }
     }
 

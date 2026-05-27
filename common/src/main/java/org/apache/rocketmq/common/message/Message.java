@@ -25,10 +25,10 @@ import java.util.Map;
 public class Message implements Serializable {
     private static final long serialVersionUID = 8445773977080406428L;
 
-    private String topic;
+    private String topic;                       /* 消息主题 */
     private int flag;
     private Map<String, String> properties;
-    private byte[] body;
+    private byte[] body;                        /* 消息内容 */
     private String transactionId;
 
     public Message() {

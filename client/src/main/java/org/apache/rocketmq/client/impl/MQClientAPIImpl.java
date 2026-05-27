@@ -323,7 +323,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     }
 
     public void shutdown() {
-        this.remotingClient.shutdown();
+        this.remotingClient.shutdown();/* 关闭 netty */
     }
 
     public Set<MessageQueueAssignment> queryAssignment(final String addr, final String topic,
@@ -582,7 +582,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                 SendMessageRequestHeaderV2 requestHeaderV2 = SendMessageRequestHeaderV2.createSendMessageRequestHeaderV2(requestHeader);
                 request = RemotingCommand.createRequestCommand(msg instanceof MessageBatch ? RequestCode.SEND_BATCH_MESSAGE : RequestCode.SEND_MESSAGE_V2, requestHeaderV2);
             } else {
-                request = RemotingCommand.createRequestCommand(RequestCode.SEND_MESSAGE, requestHeader);
+                request = RemotingCommand.createRequestCommand(RequestCode.SEND_MESSAGE, requestHeader); /* 发送消息 - 请求命令 */
             }
         }
         request.setBody(msg.getBody());
@@ -604,7 +604,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                 long costTimeSync = System.currentTimeMillis() - beginStartTime;
                 if (timeoutMillis < costTimeSync) {
                     throw new RemotingTooMuchRequestException("sendMessage call timeout");
-                }
+                }            /* 往broker发送请求 */
                 return this.sendMessageSync(addr, brokerName, msg, timeoutMillis - costTimeSync, request);
             default:
                 assert false;

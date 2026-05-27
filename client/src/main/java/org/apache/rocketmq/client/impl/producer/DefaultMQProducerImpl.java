@@ -104,7 +104,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     private final Logger log = LoggerFactory.getLogger(DefaultMQProducerImpl.class);
     private final Random random = new Random();
     private final DefaultMQProducer defaultMQProducer;
-    private final ConcurrentMap<String/* topic */, TopicPublishInfo> topicPublishInfoTable =
+    private final ConcurrentMap<String/* topic */, TopicPublishInfo> topicPublishInfoTable =  /* ## topic分区路由信息 */
         new ConcurrentHashMap<>();
     private final ArrayList<SendMessageHook> sendMessageHookList = new ArrayList<>();
     private final ArrayList<EndTransactionHook> endTransactionHookList = new ArrayList<>();
@@ -112,9 +112,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     private final BlockingQueue<Runnable> asyncSenderThreadPoolQueue;
     private final ExecutorService defaultAsyncSenderExecutor;
     protected BlockingQueue<Runnable> checkRequestQueue;
-    protected ExecutorService checkExecutor;
+    protected ExecutorService checkExecutor; /* 事务消息 - 确认线程池 */
     private ServiceState serviceState = ServiceState.CREATE_JUST;
-    private MQClientInstance mQClientFactory;
+    private MQClientInstance mQClientFactory; /* 对外通讯实例 */
     private ArrayList<CheckForbiddenHook> checkForbiddenHookList = new ArrayList<>();
     private MQFaultStrategy mqFaultStrategy;
     private ExecutorService asyncSenderExecutor;
@@ -135,7 +135,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     public DefaultMQProducerImpl(final DefaultMQProducer defaultMQProducer, RPCHook rpcHook) {
         this.defaultMQProducer = defaultMQProducer;
         this.rpcHook = rpcHook;
-
+        /* 异步发送消息队列和线程池 */
         this.asyncSenderThreadPoolQueue = new LinkedBlockingQueue<>(50000);
         this.defaultAsyncSenderExecutor = new ThreadPoolExecutor(
             Runtime.getRuntime().availableProcessors(),
@@ -248,7 +248,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {
                     this.defaultMQProducer.changeInstanceNameToPID();
                 }
-
+                /* ##  创建netty通讯客户端 */
                 this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQProducer, rpcHook);
 
                 boolean registerOK = mQClientFactory.registerProducer(this.defaultMQProducer.getProducerGroup(), this);
@@ -260,7 +260,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 }
 
                 if (startFactory) {
-                    mQClientFactory.start();
+                    mQClientFactory.start();/* ## 启动工作线程和定时器，拉取topic路由信息 */
                 }
 
                 this.mqFaultStrategy.startDetector();
@@ -282,7 +282,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
         this.mQClientFactory.sendHeartbeatToAllBrokerWithLock();
 
-        RequestFutureHolder.getInstance().startScheduledTask(this);
+        RequestFutureHolder.getInstance().startScheduledTask(this); //清除超时请求
 
     }
 
@@ -299,15 +299,15 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         this.shutdown(true);
     }
 
-    public void shutdown(final boolean shutdownFactory) {
+    public void shutdown(final boolean shutdownFactory) { /* 关闭生产者 */
         switch (this.serviceState) {
             case CREATE_JUST:
                 break;
             case RUNNING:
-                this.mQClientFactory.unregisterProducer(this.defaultMQProducer.getProducerGroup());
+                this.mQClientFactory.unregisterProducer(this.defaultMQProducer.getProducerGroup()); /* 生产者下线 --> 通知 broker */
                 this.defaultAsyncSenderExecutor.shutdown();
                 if (shutdownFactory) {
-                    this.mQClientFactory.shutdown();
+                    this.mQClientFactory.shutdown(); /* 关闭生产者 */
                 }
                 this.mqFaultStrategy.shutdown();
                 RequestFutureHolder.getInstance().shutdown(this);
@@ -700,26 +700,26 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         final long timeout
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         this.makeSureStateOK();
-        Validators.checkMessage(msg, this.defaultMQProducer);
+        Validators.checkMessage(msg, this.defaultMQProducer);/* 0、校验消息 - body不能超过4M */
         final long invokeID = random.nextLong();
         long beginTimestampFirst = System.currentTimeMillis();
         long beginTimestampPrev = beginTimestampFirst;
         long endTimestamp = beginTimestampFirst;
-        TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
+        TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());/* 1、拉取topic分区和路由信息 */
         if (topicPublishInfo != null && topicPublishInfo.ok()) {
             boolean callTimeout = false;
             MessageQueue mq = null;
             Exception exception = null;
-            SendResult sendResult = null;
+            SendResult sendResult = null;                                       // 默认重试2次
             int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed() : 1;
             int times = 0;
             String[] brokersSent = new String[timesTotal];
             boolean resetIndex = false;
-            for (; times < timesTotal; times++) {
+            for (; times < timesTotal; times++) {/* 同步请求，timesTotal=3 - 重试客户端消息id不会变 */
                 String lastBrokerName = null == mq ? null : mq.getBrokerName();
                 if (times > 0) {
                     resetIndex = true;
-                }
+                }                             /* 2、轮询选择topic分区，如果上次的Broker发送失败，尽量跳过 */
                 MessageQueue mqSelected = this.selectOneMessageQueue(topicPublishInfo, lastBrokerName, resetIndex);
                 if (mqSelected != null) {
                     mq = mqSelected;
@@ -735,7 +735,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             callTimeout = true;
                             break;
                         }
-
+                        /* 3、向broker发送消息 */
                         sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
@@ -745,7 +745,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             case ONEWAY:
                                 return null;
                             case SYNC:
-                                if (sendResult.getSendStatus() != SendStatus.SEND_OK) {
+                                if (sendResult.getSendStatus() != SendStatus.SEND_OK) {/* 非 SEND_OK 状态 也已经写入broker内存 */
                                     if (this.defaultMQProducer.isRetryAnotherBrokerWhenNotStoreOK()) {
                                         continue;
                                     }
@@ -762,7 +762,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         log.warn(msg.toString());
                         exception = e;
                         continue;
-                    } catch (RemotingException e) {
+                    } catch (RemotingException e) {/* 发送超时，进行重试 */
                         endTimestamp = System.currentTimeMillis();
                         if (this.mqFaultStrategy.isStartDetectorEnable()) {
                             // Set this broker unreachable when detecting schedule task is running for RemotingException.
@@ -784,7 +784,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         if (log.isDebugEnabled()) {
                             log.debug(msg.toString());
                         }
-                        exception = e;
+                        exception = e;   /* broker内部异常重试 */ /* CREATE_MAPEDFILE_FAILED / OS_PAGECACHE_BUSY / UNKNOWN_ERROR */
                         if (this.defaultMQProducer.getRetryResponseCodes().contains(e.getResponseCode())) {
                             continue;
                         } else {
@@ -847,7 +847,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         TopicPublishInfo topicPublishInfo = this.topicPublishInfoTable.get(topic);
         if (null == topicPublishInfo || !topicPublishInfo.ok()) {
             this.topicPublishInfoTable.putIfAbsent(topic, new TopicPublishInfo());
-            this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
+            this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);/* 拉取topic分区和路由信息 */
             topicPublishInfo = this.topicPublishInfoTable.get(topic);
         }
 
@@ -868,7 +868,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         final long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         long beginStartTime = System.currentTimeMillis();
         String brokerName = this.mQClientFactory.getBrokerNameFromMessageQueue(mq);
-        String brokerAddr = this.mQClientFactory.findBrokerAddressInPublish(brokerName);
+        String brokerAddr = this.mQClientFactory.findBrokerAddressInPublish(brokerName);/* 1、查找可用Broker */
         if (null == brokerAddr) {
             tryToFindTopicPublishInfo(mq.getTopic());
             brokerName = this.mQClientFactory.getBrokerNameFromMessageQueue(mq);
@@ -881,9 +881,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
             byte[] prevBody = msg.getBody();
             try {
-                //for MessageBatch,ID has been set in the generating process
+                //for MessageBatch,ID has been set in the generating process (批量消息已经提前设置msgId)
                 if (!(msg instanceof MessageBatch)) {
-                    MessageClientIDSetter.setUniqID(msg);
+                    MessageClientIDSetter.setUniqID(msg);/* 检查设置消息客户端id */
                 }
 
                 boolean topicWithNamespace = false;
@@ -937,7 +937,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     }
                     this.executeSendMessageHookBefore(context);
                 }
-
+                /* 2、构建发送消息报文 */
                 SendMessageRequestHeader requestHeader = new SendMessageRequestHeader();
                 requestHeader.setProducerGroup(this.defaultMQProducer.getProducerGroup());
                 requestHeader.setTopic(msg.getTopic());
@@ -1012,7 +1012,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         if (timeout < costTimeSync) {
                             throw new RemotingTooMuchRequestException("sendKernelImpl call timeout");
                         }
-                        sendResult = this.mQClientFactory.getMQClientAPIImpl().sendMessage(
+                        sendResult = this.mQClientFactory.getMQClientAPIImpl().sendMessage(/* 3、往broker发送请求，存储消息 */
                             brokerAddr,
                             brokerName,
                             msg,
@@ -1465,7 +1465,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
      */
     public SendResult send(
         Message msg) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
-        return send(msg, this.defaultMQProducer.getSendMsgTimeout());
+        return send(msg, this.defaultMQProducer.getSendMsgTimeout());/* 发送消息 - 3s超时 */
     }
 
     public void endTransaction(
@@ -1523,7 +1523,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     public SendResult send(Message msg,
         long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
-        return this.sendDefaultImpl(msg, CommunicationMode.SYNC, null, timeout);
+        return this.sendDefaultImpl(msg, CommunicationMode.SYNC, null, timeout);/* 同步发送消息 */
     }
 
     public Message request(final Message msg,

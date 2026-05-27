@@ -37,7 +37,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 public class RequestFutureHolder {
     private static final Logger log = LoggerFactory.getLogger(RequestFutureHolder.class);
-    private static final RequestFutureHolder INSTANCE = new RequestFutureHolder();
+    private static final RequestFutureHolder INSTANCE = new RequestFutureHolder(); /* 单例模式 */
     private ConcurrentHashMap<String, RequestResponseFuture> requestFutureTable = new ConcurrentHashMap<>();
     private final Set<DefaultMQProducerImpl> producerSet = new HashSet<>();
     private ScheduledExecutorService scheduledExecutorService = null;

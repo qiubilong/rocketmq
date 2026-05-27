@@ -38,12 +38,12 @@ public class Producer {
 
     public static void main(String[] args) throws MQClientException, InterruptedException {
 
-        /*
+        /**
          * Instantiate with a producer group name.
          */
         DefaultMQProducer producer = new DefaultMQProducer(PRODUCER_GROUP);
 
-        /*
+        /**
          * Specify name server addresses.
          *
          * Alternatively, you may specify name server addresses via exporting environmental variable: NAMESRV_ADDR
@@ -54,9 +54,9 @@ public class Producer {
          * </pre>
          */
         // Uncomment the following line while debugging, namesrvAddr should be set to your local address
-        // producer.setNamesrvAddr(DEFAULT_NAMESRVADDR);
+         producer.setNamesrvAddr(DEFAULT_NAMESRVADDR);
 
-        /*
+        /**
          * Launch the instance.
          */
         producer.start();
@@ -64,26 +64,28 @@ public class Producer {
         for (int i = 0; i < MESSAGE_COUNT; i++) {
             try {
 
-                /*
+                /**
                  * Create a message instance, specifying topic, tag and message body.
                  */
-                Message msg = new Message(TOPIC /* Topic */,
-                    TAG /* Tag */,
-                    ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET) /* Message body */
+                Message msg = new Message(TOPIC , TAG ,
+                    ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET)
                 );
 
-                /*
+                /**
                  * Call send message to deliver message to one of brokers.
                  */
-                SendResult sendResult = producer.send(msg);
-                /*
+                SendResult sendResult = producer.send(msg); /* 同步调用会重试 */
+
+
+                /* 异步调用不重试 */
+                /**
                  * There are different ways to send message, if you don't care about the send result,you can use this way
                  * {@code
                  * producer.sendOneway(msg);
                  * }
                  */
 
-                /*
+                /**
                  * if you want to get the send result in a synchronize way, you can use this send method
                  * {@code
                  * SendResult sendResult = producer.send(msg);
@@ -91,7 +93,7 @@ public class Producer {
                  * }
                  */
 
-                /*
+                /**
                  * if you want to get the send result in a asynchronize way, you can use this send method
                  * {@code
                  *
@@ -117,7 +119,7 @@ public class Producer {
             }
         }
 
-        /*
+        /**
          * Shut down once the producer instance is no longer in use.
          */
         producer.shutdown();

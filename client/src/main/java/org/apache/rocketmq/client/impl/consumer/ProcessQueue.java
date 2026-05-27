@@ -45,14 +45,14 @@ public class ProcessQueue {/* 消费者 - MessageQueue对应的 -  本地缓存�
     private final static long PULL_MAX_IDLE_TIME = Long.parseLong(System.getProperty("rocketmq.client.pull.pullMaxIdleTime", "120000"));
     private final Logger log = LoggerFactory.getLogger(ProcessQueue.class);
     private final ReadWriteLock treeMapLock = new ReentrantReadWriteLock();
-    private final TreeMap<Long, MessageExt> msgTreeMap = new TreeMap<>();
+    private final TreeMap<Long, MessageExt> msgTreeMap = new TreeMap<>();/* offset有序的 - 待消费的  - 消息缓存队列 */
     private final AtomicLong msgCount = new AtomicLong();
     private final AtomicLong msgSize = new AtomicLong();
     private final Lock consumeLock = new ReentrantLock();
     /**
      * A subset of msgTreeMap, will only be used when orderly consume
      */
-    private final TreeMap<Long, MessageExt> consumingMsgOrderlyTreeMap = new TreeMap<>();/* offset有序的 - 待消费的  - 消息缓存队列 */
+    private final TreeMap<Long, MessageExt> consumingMsgOrderlyTreeMap = new TreeMap<>();
     private final AtomicLong tryUnlockTimes = new AtomicLong(0);
     private volatile long queueOffsetMax = 0L;/* 目前拉取消息的最大偏移量 */
     private volatile boolean dropped = false;//重平衡后移除

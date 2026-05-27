@@ -61,14 +61,14 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
  * <p> <strong>Thread Safety:</strong> After configuring and starting process, this class can be regarded as thread-safe
  * and used among multiple threads context. </p>
  */
-public class DefaultMQProducer extends ClientConfig implements MQProducer {
+public class DefaultMQProducer extends ClientConfig implements MQProducer { /* 生产者配置类 */
 
     /**
      * Wrapping internal implementations for virtually all methods presented in this class.
      */
     protected final transient DefaultMQProducerImpl defaultMQProducerImpl;
     private final Logger logger = LoggerFactory.getLogger(DefaultMQProducer.class);
-    private final Set<Integer> retryResponseCodes = new CopyOnWriteArraySet<>(Arrays.asList(
+    private final Set<Integer> retryResponseCodes = new CopyOnWriteArraySet<>(Arrays.asList( // 发送重试 - 状态码
         ResponseCode.TOPIC_NOT_EXIST,
         ResponseCode.SERVICE_NOT_AVAILABLE,
         ResponseCode.SYSTEM_ERROR,
@@ -100,7 +100,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     /**
      * Timeout for sending messages.
      */
-    private int sendMsgTimeout = 3000;
+    private int sendMsgTimeout = 3000; /* 发送超时时间 */
 
     /**
      * Compress message body threshold, namely, message body larger than 4k will be compressed on default.
@@ -183,7 +183,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      *
      * @param producerGroup Producer group, see the name-sake field.
      */
-    public DefaultMQProducer(final String producerGroup) {
+    public DefaultMQProducer(final String producerGroup) {/* 创建生产者 */
         this(null, producerGroup, null);
     }
 
@@ -230,8 +230,8 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      */
     public DefaultMQProducer(final String namespace, final String producerGroup, RPCHook rpcHook) {
         this.namespace = namespace;
-        this.producerGroup = producerGroup;
-        defaultMQProducerImpl = new DefaultMQProducerImpl(this, rpcHook);
+        this.producerGroup = producerGroup;/* 生产组，用于 事务状态维护、故障转移	*/
+        defaultMQProducerImpl = new DefaultMQProducerImpl(this, rpcHook);/* 创建生产者 */
         produceAccumulator = MQClientManager.getInstance().getOrCreateProduceAccumulator(this);
     }
 
@@ -309,7 +309,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     @Override
     public void start() throws MQClientException {
         this.setProducerGroup(withNamespace(this.producerGroup));
-        this.defaultMQProducerImpl.start();
+        this.defaultMQProducerImpl.start();/* 启动生产者，netty通讯客户端 */
         if (this.produceAccumulator != null) {
             this.produceAccumulator.start();
         }
@@ -326,7 +326,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      * This method shuts down this producer instance and releases related resources.
      */
     @Override
-    public void shutdown() {
+    public void shutdown() { /* 关闭生产者 */
         this.defaultMQProducerImpl.shutdown();
         if (this.produceAccumulator != null) {
             this.produceAccumulator.shutdown();
@@ -390,7 +390,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
         if (this.getAutoBatch() && !(msg instanceof MessageBatch)) {
             return sendByAccumulator(msg, null, null);
         } else {
-            return sendDirect(msg, null, null);
+            return sendDirect(msg, null, null);/* 发送消息 */
         }
     }
 
@@ -678,7 +678,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
         // send in sync mode
         if (sendCallback == null) {
             if (mq == null) {
-                return this.defaultMQProducerImpl.send(msg);
+                return this.defaultMQProducerImpl.send(msg);/* 发送消息 - 3s超时 */
             } else {
                 return this.defaultMQProducerImpl.send(msg, mq);
             }
@@ -1121,10 +1121,10 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
             msgBatch = MessageBatch.generateFromList(msgs);
             for (Message message : msgBatch) {
                 Validators.checkMessage(message, this);
-                MessageClientIDSetter.setUniqID(message);
+                MessageClientIDSetter.setUniqID(message);/* 子消息 msgId */
                 message.setTopic(withNamespace(message.getTopic()));
             }
-            MessageClientIDSetter.setUniqID(msgBatch);
+            MessageClientIDSetter.setUniqID(msgBatch); /* Batch 整体 msgId */
             msgBatch.setBody(msgBatch.encode());
         } catch (Exception e) {
             throw new MQClientException("Failed to initiate the MessageBatch", e);

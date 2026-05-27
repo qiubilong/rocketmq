@@ -349,7 +349,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     }
 
     @Override
-    public void shutdown() {
+    public void shutdown() { /* 关闭 netty */
         try {
             this.timer.stop();
 
@@ -533,7 +533,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                 if (left <= 0) {
                     throw new RemotingTimeoutException("invokeSync call the addr[" + channelRemoteAddr + "] timeout");
                 }
-                RemotingCommand response = this.invokeSyncImpl(channel, request, left); /* 执行同步查询 */
+                RemotingCommand response = this.invokeSyncImpl(channel, request, left); /* 执行同步调用 */
                 doAfterRpcHooks(channelRemoteAddr, request, response);
                 this.updateChannelLastResponseTime(addr);
                 return response;

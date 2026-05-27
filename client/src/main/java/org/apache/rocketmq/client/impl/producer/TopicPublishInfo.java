@@ -25,10 +25,10 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
-public class TopicPublishInfo {
+public class TopicPublishInfo { /* topic路由信息 */
     private boolean orderTopic = false;
     private boolean haveTopicRouterInfo = false;
-    private List<MessageQueue> messageQueueList = new ArrayList<>();
+    private List<MessageQueue> messageQueueList = new ArrayList<>(); /* topic全部消息队列 */
     private volatile ThreadLocalIndex sendWhichQueue = new ThreadLocalIndex();
     private TopicRouteData topicRouteData;
 
@@ -83,12 +83,12 @@ public class TopicPublishInfo {
 
         if (filter != null && filter.length != 0) {
             for (int i = 0; i < messageQueueList.size(); i++) {
-                int index = Math.abs(sendQueue.incrementAndGet() % messageQueueList.size());
+                int index = Math.abs(sendQueue.incrementAndGet() % messageQueueList.size()); /* 递增取模 */
                 MessageQueue mq = messageQueueList.get(index);
                 boolean filterResult = true;
                 for (QueueFilter f: filter) {
                     Preconditions.checkNotNull(f);
-                    filterResult &= f.filter(mq);
+                    filterResult &= f.filter(mq); /* 轮询选择topic分区，如果上次的Broker发送失败，尽量跳过 */
                 }
                 if (filterResult) {
                     return mq;
