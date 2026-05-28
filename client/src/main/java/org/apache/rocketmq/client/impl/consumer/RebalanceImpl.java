@@ -241,7 +241,7 @@ public abstract class RebalanceImpl { /* 重平衡实现类 */
             for (final Map.Entry<String, SubscriptionData> entry : subTable.entrySet()) { /* 遍历 topic */
                 final String topic = entry.getKey();
                 try {
-                    if (!clientRebalance(topic) && tryQueryAssignment(topic)) {
+                    if (!clientRebalance(topic) && tryQueryAssignment(topic)) { /* 搭配pop模式 ，broker管理分配【消息分区】 - 默认【消费组】共享所有【消息队列分区】 */
                         balanced = this.getRebalanceResultFromBroker(topic, isOrder);
                     } else {
                         balanced = this.rebalanceByTopic(topic, isOrder);/* 消费者 - Topic - 分区重平衡 */
@@ -271,7 +271,7 @@ public abstract class RebalanceImpl { /* 重平衡实现类 */
         String strategyName = allocateMessageQueueStrategy != null ? allocateMessageQueueStrategy.getName() : null;
         int retryTimes = 0;
         while (retryTimes++ < TIMEOUT_CHECK_TIMES) {
-            try {
+            try {                                        /* broker管理分配【消息分区】 */
                 Set<MessageQueueAssignment> resultSet = mQClientFactory.queryAssignment(topic, consumerGroup,
                     strategyName, messageModel, QUERY_ASSIGNMENT_TIMEOUT / TIMEOUT_CHECK_TIMES * retryTimes);
                 topicBrokerRebalance.put(topic, topic);
@@ -378,7 +378,7 @@ public abstract class RebalanceImpl { /* 重平衡实现类 */
     private boolean getRebalanceResultFromBroker(final String topic, final boolean isOrder) {
         String strategyName = this.allocateMessageQueueStrategy.getName();
         Set<MessageQueueAssignment> messageQueueAssignments;
-        try {
+        try {  /* 搭配pop模式 ，broker管理分配【消息分区】 - 默认【消费组】共享所有【消息队列分区】 */
             messageQueueAssignments = this.mQClientFactory.queryAssignment(topic, consumerGroup,
                 strategyName, messageModel, QUERY_ASSIGNMENT_TIMEOUT);
         } catch (Exception e) {
@@ -626,7 +626,7 @@ public abstract class RebalanceImpl { /* 重平衡实现类 */
                 }
             }
         }
-
+        /* 删除旧 队列分区 */
         {
             HashMap<MessageQueue, PopProcessQueue> removeQueueMap = new HashMap<>(this.popProcessQueueTable.size());
             Iterator<Entry<MessageQueue, PopProcessQueue>> it = this.popProcessQueueTable.entrySet().iterator();
@@ -709,7 +709,7 @@ public abstract class RebalanceImpl { /* 重平衡实现类 */
             }
             this.dispatchPullRequest(pullRequestList, 500);
         }
-
+        /* 新的 队列分区 */
         {
             // add new message queue
             List<PopRequest> popRequestList = new ArrayList<>();
@@ -721,7 +721,7 @@ public abstract class RebalanceImpl { /* 重平衡实现类 */
                         log.info("doRebalance, {}, mq pop already exists, {}", consumerGroup, mq);
                     } else {
                         log.info("doRebalance, {}, add a new pop mq, {}", consumerGroup, mq);
-                        PopRequest popRequest = new PopRequest();
+                        PopRequest popRequest = new PopRequest(); /* pop消费模式，拉取消息请求 */
                         popRequest.setTopic(topic);
                         popRequest.setConsumerGroup(consumerGroup);
                         popRequest.setMessageQueue(mq);
@@ -733,7 +733,7 @@ public abstract class RebalanceImpl { /* 重平衡实现类 */
                 }
             }
 
-            this.dispatchPopPullRequest(popRequestList, 500);
+            this.dispatchPopPullRequest(popRequestList, 500);/* pop消费模式，拉取消息请求 */
         }
 
         return changed;

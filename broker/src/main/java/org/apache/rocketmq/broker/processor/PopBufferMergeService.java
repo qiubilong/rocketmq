@@ -495,7 +495,7 @@ public class PopBufferMergeService extends ServiceThread {
         }
 
         PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, reviveQueueOffset, point, nextBeginOffset);
-
+        /*  commitOffsets 队列过长（积压严重） -- 20000 */
         if (!checkQueueOk(pointWrapper)) {
             return false;
         }
@@ -506,7 +506,7 @@ public class PopBufferMergeService extends ServiceThread {
             POP_LOGGER.warn("[PopBuffer]mergeKey conflict when add ck. ck:{}, mergeKey:{}", pointWrapper, pointWrapper.getMergeKey());
             return false;
         }
-
+        /*  等待消费ACK    mergeKey = topic+group+queueId+startOffset+popTime+brokerName（唯一标识） */
         putOffsetQueue(pointWrapper);
         this.buffer.put(pointWrapper.getMergeKey(), pointWrapper);
         this.counter.incrementAndGet();
@@ -778,7 +778,7 @@ public class PopBufferMergeService extends ServiceThread {
         private volatile long reviveQueueOffset;
         private final PopCheckPoint ck;
         // bit for concurrent
-        private final AtomicInteger bits;
+        private final AtomicInteger bits;  /* 位图：第 i 位=1 表示第 i 条消息已 Ack（内存） */
         // bit for stored buffer ak
         private final AtomicInteger toStoreBits;
         private final long nextBeginOffset;

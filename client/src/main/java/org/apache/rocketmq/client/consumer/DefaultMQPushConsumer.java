@@ -748,8 +748,8 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * Shut down this client and releasing underlying resources.
      */
     @Override
-    public void shutdown() {
-        this.defaultMQPushConsumerImpl.shutdown(awaitTerminationMillisWhenShutdown);
+    public void shutdown() { /* 关闭消费者 */
+        this.defaultMQPushConsumerImpl.shutdown(awaitTerminationMillisWhenShutdown);// 默认0
         if (null != traceDispatcher) {
             traceDispatcher.shutdown();
         }

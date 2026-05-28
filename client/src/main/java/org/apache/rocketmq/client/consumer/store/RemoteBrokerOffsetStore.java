@@ -112,7 +112,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     }
 
     @Override
-    public void persistAll(Set<MessageQueue> mqs) {
+    public void persistAll(Set<MessageQueue> mqs) {/* ## 更新消费偏移 */
         if (null == mqs || mqs.isEmpty())
             return;
 

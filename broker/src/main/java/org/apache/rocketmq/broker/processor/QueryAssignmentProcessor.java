@@ -78,7 +78,7 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
         RemotingCommand request) throws RemotingCommandException {
         switch (request.getCode()) {
             case RequestCode.QUERY_ASSIGNMENT:
-                return this.queryAssignment(ctx, request);
+                return this.queryAssignment(ctx, request); /* broker管理分配【消息分区】 */
             case RequestCode.SET_MESSAGE_REQUEST_MODE:
                 return this.setMessageRequestMode(ctx, request);
             default:
@@ -106,7 +106,7 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
 
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         final QueryAssignmentResponseBody responseBody = new QueryAssignmentResponseBody();
-
+        /* topic 消费模式配置 【pop】 */
         SetMessageRequestModeRequestBody setMessageRequestModeRequestBody = this.messageRequestModeManager.getMessageRequestMode(topic, consumerGroup);
 
         if (setMessageRequestModeRequestBody == null) {
@@ -125,7 +125,7 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
                 setMessageRequestModeRequestBody.setPopShareQueueNum(brokerController.getBrokerConfig().getDefaultPopShareQueueNum());
             }
         }
-
+        /* broker 执行分区重平衡 */
         Set<MessageQueue> messageQueues = doLoadBalance(topic, consumerGroup, clientId, messageModel, strategyName, setMessageRequestModeRequestBody, ctx);
 
         Set<MessageQueueAssignment> assignments = null;
@@ -158,7 +158,7 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
      * @param messageModel
      * @param strategyName
      * @return the MessageQueues assigned to this client
-     */
+     */                              /* broker 执行分区重平衡 */
     private Set<MessageQueue> doLoadBalance(final String topic, final String consumerGroup, final String clientId,
         final MessageModel messageModel, final String strategyName,
         SetMessageRequestModeRequestBody setMessageRequestModeRequestBody, final ChannelHandlerContext ctx) {
@@ -195,14 +195,14 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
                     log.warn("QueryLoad: no assignment for group[{}] topic[{}], get consumer id list failed", consumerGroup, topic);
                     return null;
                 }
-
+                /* 消费者列表、队列分区排序 */
                 List<MessageQueue> mqAll = new ArrayList<>();
                 mqAll.addAll(mqSet);
                 Collections.sort(mqAll);
                 Collections.sort(cidAll);
                 List<MessageQueue> allocateResult = null;
 
-                try {
+                try {     /* 默认平均分配（客户端默认设置） - AllocateMessageQueueAveragely - */
                     AllocateMessageQueueStrategy allocateMessageQueueStrategy = name2LoadStrategy.get(strategyName);
                     if (null == allocateMessageQueueStrategy) {
                         log.warn("QueryLoad: unsupported strategy [{}],  {}", strategyName, RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
@@ -210,7 +210,7 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
                     }
 
                     if (setMessageRequestModeRequestBody != null && setMessageRequestModeRequestBody.getMode() == MessageRequestMode.POP) {
-                        allocateResult = allocate4Pop(allocateMessageQueueStrategy, consumerGroup, clientId, mqAll,
+                        allocateResult = allocate4Pop(allocateMessageQueueStrategy, consumerGroup, clientId, mqAll, /* pop模式分配【消息队列分区】 */
                             cidAll, setMessageRequestModeRequestBody.getPopShareQueueNum());
 
                     } else {

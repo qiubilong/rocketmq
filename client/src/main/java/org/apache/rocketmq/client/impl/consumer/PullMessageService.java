@@ -108,7 +108,7 @@ public class PullMessageService extends ServiceThread {/* 循环拉取Broker消�
         final MQConsumerInner consumer = this.mQClientFactory.selectConsumer(popRequest.getConsumerGroup());
         if (consumer != null) {
             DefaultMQPushConsumerImpl impl = (DefaultMQPushConsumerImpl) consumer;
-            impl.popMessage(popRequest);
+            impl.popMessage(popRequest);/* pop消费模式，拉取消息请求 */
         } else {
             logger.warn("No matched consumer for the PopRequest {}, drop it", popRequest);
         }
@@ -122,7 +122,7 @@ public class PullMessageService extends ServiceThread {/* 循环拉取Broker消�
             try {
                 MessageRequest messageRequest = this.messageRequestQueue.take();
                 if (messageRequest.getMessageRequestMode() == MessageRequestMode.POP) {
-                    this.popMessage((PopRequest) messageRequest);
+                    this.popMessage((PopRequest) messageRequest); /* pop消费模式，拉取消息请求 */
                 } else {
                     this.pullMessage((PullRequest) messageRequest);/* 循环向Broker 拉取消费消息 */
                 }

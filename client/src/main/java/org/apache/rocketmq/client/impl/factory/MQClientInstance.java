@@ -1115,7 +1115,7 @@ public class MQClientInstance {
             brokerAddr = this.findBrokerAddrByTopic(topic);
         }
 
-        if (null != brokerAddr) {
+        if (null != brokerAddr) {         /* broker管理分配【消息分区】 */
             return this.mQClientAPIImpl.queryAssignment(brokerAddr, topic, consumerGroup, clientId, strategyName,
                 messageModel, timeout);
         }

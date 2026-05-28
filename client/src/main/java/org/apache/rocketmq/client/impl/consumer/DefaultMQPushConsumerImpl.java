@@ -512,7 +512,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner { /* 消费者
             this.executePopPullRequestLater(popRequest, PULL_TIME_DELAY_MILLS_WHEN_SUSPEND);
             return;
         }
-
+        /* 【流控】 - 等待消息确认 - 96 */
         if (processQueue.getWaiAckMsgCount() > this.defaultMQPushConsumer.getPopThresholdForQueue()) {
             this.executePopPullRequestLater(popRequest, PULL_TIME_DELAY_MILLS_WHEN_CACHE_FLOW_CONTROL);
             if ((queueFlowControlTimes++ % 1000) == 0) {
@@ -554,7 +554,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner { /* 消费者
                             DefaultMQPushConsumerImpl.this.getConsumerStatsManager().incPullTPS(popRequest.getConsumerGroup(),
                                 popRequest.getMessageQueue().getTopic(), popResult.getMsgFoundList().size());
                             popRequest.getPopProcessQueue().incFoundMsg(popResult.getMsgFoundList().size());
-
+                            /* pop消费模式，拉取消息成功 -- 提交业务消费线程池 */
                             DefaultMQPushConsumerImpl.this.consumeMessagePopService.submitPopConsumeRequest(
                                 popResult.getMsgFoundList(),
                                 processQueue,
@@ -602,7 +602,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner { /* 消费者
             long invisibleTime = this.defaultMQPushConsumer.getPopInvisibleTime();
             if (invisibleTime < MIN_POP_INVISIBLE_TIME || invisibleTime > MAX_POP_INVISIBLE_TIME) {
                 invisibleTime = 60000;
-            }
+            }   /* pop消费模式，拉取消息 */
             this.pullAPIWrapper.popAsync(popRequest.getMessageQueue(), invisibleTime, this.defaultMQPushConsumer.getPopBatchNums(),
                 popRequest.getConsumerGroup(), BROKER_SUSPEND_MAX_TIME_MILLIS, popCallback, true, popRequest.getInitMode(),
                 false, subscriptionData.getExpressionType(), subscriptionData.getSubString());
@@ -882,10 +882,10 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner { /* 消费者
             case CREATE_JUST:
                 break;
             case RUNNING:
-                this.consumeMessageService.shutdown(awaitTerminateMillis);
-                this.persistConsumerOffset();
+                this.consumeMessageService.shutdown(awaitTerminateMillis); /* 关闭 消费线程池 awaitTerminateMillis=0 */
+                this.persistConsumerOffset();/* ## 更新消费偏移 */
                 this.mQClientFactory.unregisterConsumer(this.defaultMQPushConsumer.getConsumerGroup());
-                this.mQClientFactory.shutdown();
+                this.mQClientFactory.shutdown(); /* 关闭netty */
                 log.info("the consumer [{}] shutdown OK", this.defaultMQPushConsumer.getConsumerGroup());
                 this.rebalanceImpl.destroy();
                 this.serviceState = ServiceState.SHUTDOWN_ALREADY;
@@ -1364,7 +1364,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner { /* 消费者
     }
 
     @Override
-    public void persistConsumerOffset() {
+    public void persistConsumerOffset() {/* ## 更新消费偏移 */
         try {
             this.makeSureStateOK();
             Set<MessageQueue> mqs = new HashSet<>();

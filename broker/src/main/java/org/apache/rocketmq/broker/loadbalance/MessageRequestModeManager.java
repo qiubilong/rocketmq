@@ -23,7 +23,7 @@ import org.apache.rocketmq.common.ConfigManager;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 import org.apache.rocketmq.remoting.protocol.body.SetMessageRequestModeRequestBody;
 
-public class MessageRequestModeManager extends ConfigManager {
+public class MessageRequestModeManager extends ConfigManager { /* pop模式配置 */
 
     private transient BrokerController brokerController;
 

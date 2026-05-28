@@ -386,7 +386,7 @@ public class PullAPIWrapper {
                 // timeout + 10s, fix the too earlier timeout of client when long polling.
                 timeout += 10 * 1000;
             }
-            String brokerAddr = findBrokerResult.getBrokerAddr();
+            String brokerAddr = findBrokerResult.getBrokerAddr();   /* pop消费模式，拉取消息 */
             this.mQClientFactory.getMQClientAPIImpl().popMessageAsync(mq.getBrokerName(), brokerAddr, requestHeader, timeout, popCallback);
             return;
         }

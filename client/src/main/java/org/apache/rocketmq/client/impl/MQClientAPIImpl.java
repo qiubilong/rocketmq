@@ -336,7 +336,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestBody.setClientId(clientId);
         requestBody.setMessageModel(messageModel);
         requestBody.setStrategyName(strategyName);
-
+        /* broker管理分配【消息分区】 */
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_ASSIGNMENT, null);
         request.setBody(requestBody.encode());
 
@@ -851,7 +851,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         return null;
     }
-
+    /* pop消费模式，拉取消息 */
     public void popMessageAsync(
         final String brokerName, final String addr, final PopMessageRequestHeader requestHeader,
         final long timeoutMillis, final PopCallback popCallback
