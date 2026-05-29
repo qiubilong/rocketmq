@@ -34,7 +34,7 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.header.namesrv.GetRouteInfoRequestHeader;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
-
+/* nameServer - 请求处理器 */
 public class ClientRequestProcessor implements NettyRequestProcessor {
 
     private static Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
@@ -48,7 +48,7 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
         this.namesrvController = namesrvController;
         this.startupTimeMillis = System.currentTimeMillis();
     }
-
+    /* 获取 - Topic和Broker路由信息 */
     @Override
     public RemotingCommand processRequest(final ChannelHandlerContext ctx,
         final RemotingCommand request) throws Exception {
@@ -69,7 +69,7 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
             response.setRemark("name server not ready");
             return response;
         }
-
+        /* 查询topic 路由信息 */
         TopicRouteData topicRouteData = this.namesrvController.getRouteInfoManager().pickupTopicRouteData(requestHeader.getTopic());
 
         if (topicRouteData != null) {
@@ -82,7 +82,7 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
                 String orderTopicConf =
                     this.namesrvController.getKvConfigManager().getKVConfig(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG,
                         requestHeader.getTopic());
-                topicRouteData.setOrderTopicConf(orderTopicConf);
+                topicRouteData.setOrderTopicConf(orderTopicConf);/* 顺序topic */
             }
 
             byte[] content;

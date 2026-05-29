@@ -132,21 +132,21 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     public NettyRemotingServer(final NettyServerConfig nettyServerConfig,
         final ChannelEventListener channelEventListener) {
         super(nettyServerConfig.getServerOnewaySemaphoreValue(), nettyServerConfig.getServerAsyncSemaphoreValue());
-        this.serverBootstrap = new ServerBootstrap();
+        this.serverBootstrap = new ServerBootstrap();/* 创建netty服务端，初始化 boss线程组 和 worker线程组 */
         this.nettyServerConfig = nettyServerConfig;
         this.channelEventListener = channelEventListener;
 
         this.publicExecutor = buildPublicExecutor(nettyServerConfig);
         this.scheduledExecutorService = buildScheduleExecutor();
 
-        this.eventLoopGroupBoss = buildBossEventLoopGroup();
-        this.eventLoopGroupSelector = buildEventLoopGroupSelector();
+        this.eventLoopGroupBoss = buildBossEventLoopGroup();         /* 处理客户端 - 连接 */
+        this.eventLoopGroupSelector = buildEventLoopGroupSelector();  /* 处理客户端 - 读写io */
 
         loadSslContext();
     }
 
     private EventLoopGroup buildEventLoopGroupSelector() {
-        if (useEpoll()) {
+        if (useEpoll()) {      /* 处理客户端 - 读写io */
             return new EpollEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactoryImpl("NettyServerEPOLLSelector_"));
         } else {
             return new NioEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactoryImpl("NettyServerNIOSelector_"));
@@ -154,8 +154,8 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     }
 
     private EventLoopGroup buildBossEventLoopGroup() {
-        if (useEpoll()) {
-            return new EpollEventLoopGroup(1, new ThreadFactoryImpl("NettyEPOLLBoss_"));
+        if (useEpoll()) {                      // 一个线程就够
+            return new EpollEventLoopGroup(1, new ThreadFactoryImpl("NettyEPOLLBoss_")); /* 处理客户端 - 连接 */
         } else {
             return new NioEventLoopGroup(1, new ThreadFactoryImpl("NettyNIOBoss_"));
         }
@@ -211,7 +211,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             .childOption(ChannelOption.TCP_NODELAY, true)
             .localAddress(new InetSocketAddress(this.nettyServerConfig.getBindAddress(),
                 this.nettyServerConfig.getListenPort()))
-            .childHandler(new ChannelInitializer<SocketChannel>() {
+            .childHandler(new ChannelInitializer<SocketChannel>() {  /*  客户端Channel通道/pipeLine - 初始化 - 处理器 */
                 @Override
                 public void initChannel(SocketChannel ch) {
                     configChannel(ch);
@@ -221,7 +221,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         addCustomConfig(serverBootstrap);
 
         try {
-            ChannelFuture sync = serverBootstrap.bind().sync();
+            ChannelFuture sync = serverBootstrap.bind().sync(); /* 实例化NioServerSocketChannel &绑定端口 & 监听客户端连接 */
             InetSocketAddress addr = (InetSocketAddress) sync.channel().localAddress();
             if (0 == nettyServerConfig.getListenPort()) {
                 this.nettyServerConfig.setListenPort(addr.getPort());
@@ -242,7 +242,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             @Override
             public void run(Timeout timeout) {
                 try {
-                    NettyRemotingServer.this.scanResponseTable();
+                    NettyRemotingServer.this.scanResponseTable();  /* 删除超时请求 */
                 } catch (Throwable e) {
                     log.error("scanResponseTable exception", e);
                 } finally {
@@ -276,8 +276,8 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                 distributionHandler,
                 new IdleStateHandler(0, 0,
                     nettyServerConfig.getServerChannelMaxIdleTimeSeconds()),
-                connectionManageHandler,
-                serverHandler
+                connectionManageHandler, /* 维护在线可用的Broker */
+                serverHandler            /* 处理客户端请求 */
             );
     }
 
@@ -408,8 +408,8 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private void prepareSharableHandlers() {
         tlsModeHandler = new TlsModeHandler(TlsSystemConfig.tlsMode);
         encoder = new NettyEncoder();
-        connectionManageHandler = new NettyConnectManageHandler();
-        serverHandler = new NettyServerHandler();
+        connectionManageHandler = new NettyConnectManageHandler();     /* 分发 Channel 连接 事件 */
+        serverHandler = new NettyServerHandler();                      /* Channel io 读写 */
         distributionHandler = new RemotingCodeDistributionHandler();
     }
 
@@ -538,7 +538,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             ctx.fireChannelRead(msg.retain());
         }
     }
-
+    /* 通道Channel - IO读写 - 处理 */
     @ChannelHandler.Sharable
     public class NettyServerHandler extends SimpleChannelInboundHandler<RemotingCommand> {
 
@@ -547,7 +547,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             int localPort = RemotingHelper.parseSocketAddressPort(ctx.channel().localAddress());
             NettyRemotingAbstract remotingAbstract = NettyRemotingServer.this.remotingServerTable.get(localPort);
             if (localPort != -1 && remotingAbstract != null) {
-                remotingAbstract.processMessageReceived(ctx, msg);
+                remotingAbstract.processMessageReceived(ctx, msg);/* 处理客户端请求 */
                 return;
             }
             // The related remoting server has been shutdown, so close the connected channel
@@ -573,7 +573,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     }
 
     @ChannelHandler.Sharable
-    public class NettyConnectManageHandler extends ChannelDuplexHandler {
+    public class NettyConnectManageHandler extends ChannelDuplexHandler {  /* 通道Channel - 连接 - 处理 */
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
             final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
@@ -614,7 +614,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             if (evt instanceof IdleStateEvent) {
                 IdleStateEvent event = (IdleStateEvent) evt;
-                if (event.state().equals(IdleState.ALL_IDLE)) {
+                if (event.state().equals(IdleState.ALL_IDLE)) { /* 读写空闲 */
                     final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
                     log.warn("NETTY SERVER PIPELINE: IDLE exception [{}]", remoteAddress);
                     RemotingHelper.closeChannel(ctx.channel());

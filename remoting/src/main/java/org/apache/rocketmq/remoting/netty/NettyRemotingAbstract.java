@@ -245,7 +245,7 @@ public abstract class NettyRemotingAbstract {
      * @param cmd request command.
      */
     public void processRequestCommand(final ChannelHandlerContext ctx, final RemotingCommand cmd) {
-        final Pair<NettyRequestProcessor, ExecutorService> matched = this.processorTable.get(cmd.getCode());
+        final Pair<NettyRequestProcessor, ExecutorService> matched = this.processorTable.get(cmd.getCode());/* ## 1、根据请求命令 查找处理器 */
         final Pair<NettyRequestProcessor, ExecutorService> pair = null == matched ? this.defaultRequestProcessorPair : matched;
         final int opaque = cmd.getOpaque();
 
@@ -258,7 +258,7 @@ public abstract class NettyRemotingAbstract {
             log.error(RemotingHelper.parseChannelRemoteAddr(ctx.channel()) + error);
             return;
         }
-
+        /* 创建执行任务 */
         Runnable run = buildProcessRequestHandler(ctx, cmd, pair, opaque);
 
         if (pair.getObject1().rejectRequest()) {
@@ -272,8 +272,8 @@ public abstract class NettyRemotingAbstract {
         try {
             final RequestTask requestTask = new RequestTask(run, ctx.channel(), cmd);
             //async execute task, current thread return directly
-            pair.getObject2().submit(requestTask);
-        } catch (RejectedExecutionException e) {
+            pair.getObject2().submit(requestTask);/* 执行异步任务 */
+        } catch (RejectedExecutionException e) {  /* 异步线程 */
             if ((System.currentTimeMillis() % 10000) == 0) {
                 log.warn(RemotingHelper.parseChannelRemoteAddr(ctx.channel())
                     + ", too many requests and system thread pool busy, RejectedExecutionException "
@@ -308,7 +308,7 @@ public abstract class NettyRemotingAbstract {
                 } catch (Exception e) {
                     exception = e;
                 }
-
+                /* ## 2、处理请求 。 注册中心NameServer = DefaultRequestProcessor ； Broker接收消息=SendMessageProcessor */
                 if (exception == null) {
                     response = pair.getObject1().processRequest(ctx, cmd);
                 } else {
@@ -326,7 +326,7 @@ public abstract class NettyRemotingAbstract {
                 if (exception != null) {
                     throw exception;
                 }
-
+                /* ## 3、响应处理结果 */
                 writeResponse(ctx.channel(), cmd, response);
             } catch (AbortProcessException e) {
                 response = RemotingCommand.createResponseCommand(e.getResponseCode(), e.getErrorMessage());

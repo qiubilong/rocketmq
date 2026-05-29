@@ -39,7 +39,7 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.srvutil.ServerUtil;
 import org.apache.rocketmq.srvutil.ShutdownHookThread;
-
+/* 名字服务器 - 是一个简单的topic路由注册中心，支持topic、broker的动态注册与发现 */
 public class NamesrvStartup {
 
     private final static Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
@@ -55,16 +55,16 @@ public class NamesrvStartup {
         controllerManagerMain();
     }
 
-    public static NamesrvController main0(String[] args) {
+    public static NamesrvController main0(String[] args) { /* 启动 - Topic路由注册中心 - 存储broker和topic信息 - 独立部署 */
         try {
             parseCommandlineAndConfigFile(args);
-            NamesrvController controller = createAndStartNamesrvController();
+            NamesrvController controller = createAndStartNamesrvController();/* 创建 & 启动 NamesrvController */
             return controller;
         } catch (Throwable e) {
             e.printStackTrace();
             System.exit(-1);
         }
-
+        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxx");
         return null;
     }
 
@@ -93,14 +93,14 @@ public class NamesrvStartup {
         namesrvConfig = new NamesrvConfig();
         nettyServerConfig = new NettyServerConfig();
         nettyClientConfig = new NettyClientConfig();
-        nettyServerConfig.setListenPort(9876);
+        nettyServerConfig.setListenPort(9876);/* Topic路由注册中心 - 对外服务端口  */
         if (commandLine.hasOption('c')) {
             String file = commandLine.getOptionValue('c');
             if (file != null) {
                 InputStream in = new BufferedInputStream(Files.newInputStream(Paths.get(file)));
                 properties = new Properties();
                 properties.load(in);
-                MixAll.properties2Object(properties, namesrvConfig);
+                MixAll.properties2Object(properties, namesrvConfig);/* 解析 -c 文件配置 */
                 MixAll.properties2Object(properties, nettyServerConfig);
                 MixAll.properties2Object(properties, nettyClientConfig);
                 if (namesrvConfig.isEnableControllerInNamesrv()) {
@@ -136,8 +136,8 @@ public class NamesrvStartup {
 
     public static NamesrvController createAndStartNamesrvController() throws Exception {
 
-        NamesrvController controller = createNamesrvController();
-        start(controller);
+        NamesrvController controller = createNamesrvController();/* 创建 - Topic路由注册中心  */
+        start(controller); /* 启动 */
         NettyServerConfig serverConfig = controller.getNettyServerConfig();
         String tip = String.format("The Name Server boot success. serializeType=%s, address %s:%d", RemotingCommand.getSerializeTypeConfigInThisServer(), serverConfig.getBindAddress(), serverConfig.getListenPort());
         log.info(tip);
@@ -159,7 +159,7 @@ public class NamesrvStartup {
             throw new IllegalArgumentException("NamesrvController is null");
         }
 
-        boolean initResult = controller.initialize();
+        boolean initResult = controller.initialize();;/*  创建netty服务端、注册请求处理器、定时移除掉线broker */
         if (!initResult) {
             controller.shutdown();
             System.exit(-3);
@@ -170,7 +170,7 @@ public class NamesrvStartup {
             return null;
         }));
 
-        controller.start();
+        controller.start();/* 启动netty服务端，监听broker请求 --> 接收管理topic配置信息   */
 
         return controller;
     }

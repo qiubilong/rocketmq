@@ -65,14 +65,14 @@ import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingInfo;
 
-public class RouteInfoManager {
+public class RouteInfoManager {  /* Topic路由注册中心 */
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
     private final static long DEFAULT_BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Map<String/* topic */, Map<String, QueueData>> topicQueueTable;
-    private final Map<String/* brokerName */, BrokerData> brokerAddrTable;
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();               //更新数据读写锁
+    private final Map<String/* topic */, Map<String, QueueData>> topicQueueTable;  /* topic分区信息 */
+    private final Map<String/* brokerName */, BrokerData> brokerAddrTable;         /* broker地址 */
     private final Map<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
-    private final Map<BrokerAddrInfo/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
+    private final Map<BrokerAddrInfo/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;   /* 在线可用的Broker */
     private final Map<BrokerAddrInfo/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
     private final Map<String/* topic */, Map<String/*brokerName*/, TopicQueueMappingInfo>> topicQueueMappingInfoTable;
 
@@ -694,7 +694,7 @@ public class RouteInfoManager {
 
         return Collections.min(brokerData.getBrokerAddrs().keySet()) > 0;
     }
-
+    /* 查找topic 路由信息 */
     public TopicRouteData pickupTopicRouteData(final String topic) {
         TopicRouteData topicRouteData = new TopicRouteData();
         boolean foundQueueData = false;
@@ -707,7 +707,7 @@ public class RouteInfoManager {
 
         try {
             this.lock.readLock().lockInterruptibly();
-            Map<String, QueueData> queueDataMap = this.topicQueueTable.get(topic);
+            Map<String, QueueData> queueDataMap = this.topicQueueTable.get(topic); /* 查找topic配置  */
             if (queueDataMap != null) {
                 topicRouteData.setQueueDatas(new ArrayList<>(queueDataMap.values()));
                 foundQueueData = true;
@@ -719,7 +719,7 @@ public class RouteInfoManager {
                     if (null == brokerData) {
                         continue;
                     }
-                    BrokerData brokerDataClone = new BrokerData(brokerData);
+                    BrokerData brokerDataClone = new BrokerData(brokerData); /* broker地址 */
 
                     brokerDataList.add(brokerDataClone);
                     foundBrokerData = true;

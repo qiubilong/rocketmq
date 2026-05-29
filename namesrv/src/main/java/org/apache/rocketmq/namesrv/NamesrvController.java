@@ -51,7 +51,7 @@ import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
 import org.apache.rocketmq.srvutil.FileWatchService;
 
-public class NamesrvController {
+public class NamesrvController { /* Topic路由注册中心 - 存储broker和topic信息 - 独立部署 */
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
     private static final Logger WATER_MARK_LOG = LoggerFactory.getLogger(LoggerName.NAMESRV_WATER_MARK_LOGGER_NAME);
 
@@ -92,17 +92,17 @@ public class NamesrvController {
         this.nettyServerConfig = nettyServerConfig;
         this.nettyClientConfig = nettyClientConfig;
         this.kvConfigManager = new KVConfigManager(this);
-        this.brokerHousekeepingService = new BrokerHousekeepingService(this);
-        this.routeInfoManager = new RouteInfoManager(namesrvConfig, this);
+        this.brokerHousekeepingService = new BrokerHousekeepingService(this);/* channel关闭事件 */
+        this.routeInfoManager = new RouteInfoManager(namesrvConfig, this); /* Topic路由注册中心 */
         this.configuration = new Configuration(LOGGER, this.namesrvConfig, this.nettyServerConfig);
         this.configuration.setStorePathFromConfig(this.namesrvConfig, "configStorePath");
     }
 
     public boolean initialize() {
-        loadConfig();
-        initiateNetworkComponents();
+        loadConfig(); //加载旧数据
+        initiateNetworkComponents(); /* 创建netty服务端，初始化 boss线程组 和 worker线程组 */
         initiateThreadExecutors();
-        registerProcessor();
+        registerProcessor();/* 注册请求处理器 */
         startScheduleService();
         initiateSslContext();
         initiateRpcHooks();
@@ -110,10 +110,10 @@ public class NamesrvController {
     }
 
     private void loadConfig() {
-        this.kvConfigManager.load();
+        this.kvConfigManager.load();//加载旧数据
     }
 
-    private void startScheduleService() {
+    private void startScheduleService() {   /* 定时移除掉线的Broker节点（活跃超过2分钟）  */
         this.scanExecutorService.scheduleAtFixedRate(NamesrvController.this.routeInfoManager::scanNotActiveBroker,
             5, this.namesrvConfig.getScanNotActiveBrokerInterval(), TimeUnit.MILLISECONDS);
 
@@ -129,7 +129,7 @@ public class NamesrvController {
         }, 10, 1, TimeUnit.SECONDS);
     }
 
-    private void initiateNetworkComponents() {
+    private void initiateNetworkComponents() { /* 创建netty服务端，初始化 boss线程组 和 worker线程组 */
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
         this.remotingClient = new NettyRemotingClient(this.nettyClientConfig);
     }
@@ -209,7 +209,7 @@ public class NamesrvController {
             // Support get route info only temporarily
             ClientRequestProcessor clientRequestProcessor = new ClientRequestProcessor(this);
             this.remotingServer.registerProcessor(RequestCode.GET_ROUTEINFO_BY_TOPIC, clientRequestProcessor, this.clientRequestExecutor);
-
+            /* 注册请求处理器 */
             this.remotingServer.registerDefaultProcessor(new DefaultRequestProcessor(this), this.defaultExecutor);
         }
     }
@@ -219,7 +219,7 @@ public class NamesrvController {
     }
 
     public void start() throws Exception {
-        this.remotingServer.start();
+        this.remotingServer.start();/* 启动netty服务端，监听broker请求 --> 接收管理topic配置信息   */
 
         // In test scenarios where it is up to OS to pick up an available port, set the listening port back to config
         if (0 == nettyServerConfig.getListenPort()) {
