@@ -206,7 +206,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         RemotingCommand request) throws RemotingCommandException {
         switch (request.getCode()) {
             case RequestCode.UPDATE_AND_CREATE_TOPIC:
-                return this.updateAndCreateTopic(ctx, request);
+                return this.updateAndCreateTopic(ctx, request); /* 创建topic */
             case RequestCode.DELETE_TOPIC_IN_BROKER:
                 return this.deleteTopic(ctx, request);
             case RequestCode.GET_ALL_TOPIC_CONFIG:

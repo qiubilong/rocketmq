@@ -47,7 +47,7 @@ public class BrokerStartup {
     public static final SystemConfigFileHelper CONFIG_FILE_HELPER = new SystemConfigFileHelper();
 
     public static void main(String[] args) {
-        start(createBrokerController(args));
+        start(createBrokerController(args));/* 创建 & 启动Broker */
     }
 
     public static BrokerController start(BrokerController controller) {
@@ -97,7 +97,7 @@ public class BrokerStartup {
         }
 
         Properties properties = null;
-        if (commandLine.hasOption('c')) {
+        if (commandLine.hasOption('c')) {/* 解析配置文件 */
             String file = commandLine.getOptionValue('c');
             if (file != null) {
                 CONFIG_FILE_HELPER.setFile(file);
@@ -122,7 +122,7 @@ public class BrokerStartup {
         }
 
         // Validate namesrvAddr
-        String namesrvAddr = brokerConfig.getNamesrvAddr();
+        String namesrvAddr = brokerConfig.getNamesrvAddr(); //* 注册中心地址校验
         if (StringUtils.isNotBlank(namesrvAddr)) {
             try {
                 String[] addrArray = namesrvAddr.split(";");
@@ -146,7 +146,7 @@ public class BrokerStartup {
             switch (messageStoreConfig.getBrokerRole()) {
                 case ASYNC_MASTER:
                 case SYNC_MASTER:
-                    brokerConfig.setBrokerId(MixAll.MASTER_ID);
+                    brokerConfig.setBrokerId(MixAll.MASTER_ID);//强制将Master的brokerId设置为0
                     break;
                 case SLAVE:
                     if (brokerConfig.getBrokerId() <= MixAll.MASTER_ID) {
@@ -204,7 +204,7 @@ public class BrokerStartup {
         MixAll.printObjectProperties(log, nettyClientConfig);
         MixAll.printObjectProperties(log, messageStoreConfig);
 
-        final BrokerController controller = new BrokerController(
+        final BrokerController controller = new BrokerController(/* ## 1、创建Broker */
             brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
 
         // Remember all configs to prevent discard
@@ -225,7 +225,7 @@ public class BrokerStartup {
                     if (!this.hasShutdown) {
                         this.hasShutdown = true;
                         long beginTime = System.currentTimeMillis();
-                        brokerController.shutdown();
+                        brokerController.shutdown();/* ## 3、Broker关机 */
                         long consumingTimeTotal = System.currentTimeMillis() - beginTime;
                         log.info("Shutdown hook over, consuming total time(ms): {}", consumingTimeTotal);
                     }
@@ -236,13 +236,13 @@ public class BrokerStartup {
 
     public static BrokerController createBrokerController(String[] args) {
         try {
-            BrokerController controller = buildBrokerController(args);
-            boolean initResult = controller.initialize();
+            BrokerController controller = buildBrokerController(args);/* 解析配置文件，创建broker */
+            boolean initResult = controller.initialize(); /* ## 2、加载topic配置、消费进度、加载恢复数据CommitLog和consumerQueue 、 启动Broker Netty服务器 */
             if (!initResult) {
                 controller.shutdown();
                 System.exit(-3);
             }
-            Runtime.getRuntime().addShutdownHook(new Thread(buildShutdownHook(controller)));
+            Runtime.getRuntime().addShutdownHook(new Thread(buildShutdownHook(controller)));/* ## 3、Broker关机 */
             return controller;
         } catch (Throwable e) {
             e.printStackTrace();

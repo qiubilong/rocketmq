@@ -327,9 +327,9 @@ public class PopBufferMergeService extends ServiceThread {
             this.serving = false;
         } else {
             if (scanTimes % countOfSecond1 == 0) {
-                POP_LOGGER.info("[PopBuffer]scan, PopBufferEclipse={}, " +
-                        "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
-                    eclipse, count, countCk, counter.get(), offsetBufferSize);
+                //POP_LOGGER.info("[PopBuffer]scan, PopBufferEclipse={}, " +
+                //        "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
+                //    eclipse, count, countCk, counter.get(), offsetBufferSize);
             }
         }
         PopMetricsManager.recordPopBufferScanTimeConsume(eclipse);

@@ -624,7 +624,7 @@ public class BrokerController {
             @Override
             public void run() {
                 try {
-                    BrokerController.this.printWaterMark();
+                    //BrokerController.this.printWaterMark();
                 } catch (Throwable e) {
                     LOG.error("BrokerController: failed to print broker watermark", e);
                 }

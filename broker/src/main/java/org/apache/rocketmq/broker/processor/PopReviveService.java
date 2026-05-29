@@ -312,7 +312,7 @@ public class PopReviveService extends ServiceThread {
         long consumeOffset = this.brokerController.getConsumerOffsetManager().queryOffset(PopAckConstants.REVIVE_GROUP, reviveTopic, queueId);
         long oldOffset = Math.max(reviveOffset, consumeOffset);
         consumeReviveObj.oldOffset = oldOffset;
-        POP_LOGGER.info("reviveQueueId={}, old offset is {} ", queueId, oldOffset);
+        //POP_LOGGER.info("reviveQueueId={}, old offset is {} ", queueId, oldOffset);
         long offset = oldOffset + 1;
         int noMsgCount = 0;
         long firstRt = 0;
@@ -331,8 +331,8 @@ public class PopReviveService extends ServiceThread {
                 if (endTime != 0 && System.currentTimeMillis() - endTime > 3 * PopAckConstants.SECOND && timerDelay <= 0 && commitLogDelay <= 0) {
                     endTime = System.currentTimeMillis();
                 }
-                POP_LOGGER.info("reviveQueueId={}, offset is {}, can not get new msg, old endTime {}, new endTime {}, timerDelay={}, commitLogDelay={} ",
-                    queueId, offset, old, endTime, timerDelay, commitLogDelay);
+                //POP_LOGGER.info("reviveQueueId={}, offset is {}, can not get new msg, old endTime {}, new endTime {}, timerDelay={}, commitLogDelay={} ",
+                //    queueId, offset, old, endTime, timerDelay, commitLogDelay);
                 if (endTime - firstRt > PopAckConstants.ackTimeInterval + PopAckConstants.SECOND) {
                     break;
                 }
@@ -465,7 +465,7 @@ public class PopReviveService extends ServiceThread {
 
     protected void mergeAndRevive(ConsumeReviveObj consumeReviveObj) throws Throwable {
         ArrayList<PopCheckPoint> sortList = consumeReviveObj.genSortList();
-        POP_LOGGER.info("reviveQueueId={},ck listSize={}", queueId, sortList.size());
+        //POP_LOGGER.info("reviveQueueId={},ck listSize={}", queueId, sortList.size());
         if (sortList.size() != 0) {
             POP_LOGGER.info("reviveQueueId={}, 1st ck, startOffset={}, reviveOffset={} ; last ck, startOffset={}, reviveOffset={}", queueId, sortList.get(0).getStartOffset(),
                 sortList.get(0).getReviveOffset(), sortList.get(sortList.size() - 1).getStartOffset(), sortList.get(sortList.size() - 1).getReviveOffset());
@@ -640,7 +640,7 @@ public class PopReviveService extends ServiceThread {
                     continue;
                 }
 
-                POP_LOGGER.info("start revive topic={}, reviveQueueId={}", reviveTopic, queueId);
+                //POP_LOGGER.info("start revive topic={}, reviveQueueId={}", reviveTopic, queueId);
                 ConsumeReviveObj consumeReviveObj = new ConsumeReviveObj();
                 consumeReviveMessage(consumeReviveObj);
 
@@ -661,11 +661,11 @@ public class PopReviveService extends ServiceThread {
                     currentReviveMessageTimestamp = System.currentTimeMillis();
                 }
 
-                POP_LOGGER.info("reviveQueueId={},revive finish,old offset is {}, new offset is {}, ckDelay={}  ",
-                    queueId, consumeReviveObj.oldOffset, consumeReviveObj.newOffset, delay);
+                //POP_LOGGER.info("reviveQueueId={},revive finish,old offset is {}, new offset is {}, ckDelay={}  ",
+                //    queueId, consumeReviveObj.oldOffset, consumeReviveObj.newOffset, delay);
 
                 if (sortList == null || sortList.isEmpty()) {
-                    POP_LOGGER.info("reviveQueueId={}, has no new msg, take a rest {}", queueId, slow);
+                    //POP_LOGGER.info("reviveQueueId={}, has no new msg, take a rest {}", queueId, slow);
                     this.waitForRunning(slow * brokerController.getBrokerConfig().getReviveInterval());
                     if (slow < brokerController.getBrokerConfig().getReviveMaxSlow()) {
                         slow++;

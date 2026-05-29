@@ -23,13 +23,14 @@ import org.apache.rocketmq.common.metrics.MetricsExporterType;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 public class BrokerConfig extends BrokerIdentity {
 
     private String brokerConfigPath = null;
 
-    private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));
+    private String rocketmqHome = System.getProperty("user.dir") + File.separator + "data";//System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));
     @ImportantField
     private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
 
@@ -377,7 +378,7 @@ public class BrokerConfig extends BrokerIdentity {
     private boolean usePIDColdCtrStrategy = true;
     private long cgColdReadThreshold = 3 * 1024 * 1024;
     private long globalColdReadThreshold = 100 * 1024 * 1024;
-    
+
     /**
      * The interval to fetch namesrv addr, default value is 10 second
      */
@@ -1707,11 +1708,11 @@ public class BrokerConfig extends BrokerIdentity {
     public void setUseStaticSubscription(boolean useStaticSubscription) {
         this.useStaticSubscription = useStaticSubscription;
     }
-    
+
     public long getFetchNamesrvAddrInterval() {
         return fetchNamesrvAddrInterval;
     }
-    
+
     public void setFetchNamesrvAddrInterval(final long fetchNamesrvAddrInterval) {
         this.fetchNamesrvAddrInterval = fetchNamesrvAddrInterval;
     }
