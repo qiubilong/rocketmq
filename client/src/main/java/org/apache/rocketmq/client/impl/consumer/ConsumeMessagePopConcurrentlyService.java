@@ -50,11 +50,11 @@ import org.apache.rocketmq.remoting.protocol.header.ExtraInfoUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
-public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageService {
+public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageService { /* pop模式 - 并发消费  */
     private static final Logger log = LoggerFactory.getLogger(ConsumeMessagePopConcurrentlyService.class);
     private final DefaultMQPushConsumerImpl defaultMQPushConsumerImpl;
     private final DefaultMQPushConsumer defaultMQPushConsumer;
-    private final MessageListenerConcurrently messageListener;
+    private final MessageListenerConcurrently messageListener; /* 业务消息监听器 */
     private final BlockingQueue<Runnable> consumeRequestQueue;
     private final ThreadPoolExecutor consumeExecutor;
     private final String consumerGroup;
@@ -70,7 +70,7 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
         this.consumerGroup = this.defaultMQPushConsumer.getConsumerGroup();
         this.consumeRequestQueue = new LinkedBlockingQueue<>();
 
-        this.consumeExecutor = new ThreadPoolExecutor(
+        this.consumeExecutor = new ThreadPoolExecutor( /* 并发消费线程池 */
             this.defaultMQPushConsumer.getConsumeThreadMin(),
             this.defaultMQPushConsumer.getConsumeThreadMax(),
             1000 * 60,
@@ -178,11 +178,11 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
         final List<MessageExt> msgs,
         final PopProcessQueue processQueue,
         final MessageQueue messageQueue) {
-        final int consumeBatchSize = this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize();
+        final int consumeBatchSize = this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize();/* 默认 每次消费 1个 */
         if (msgs.size() <= consumeBatchSize) {
             ConsumeRequest consumeRequest = new ConsumeRequest(msgs, processQueue, messageQueue);
             try {
-                this.consumeExecutor.submit(consumeRequest);
+                this.consumeExecutor.submit(consumeRequest);/* 拉取消息成功后，异步通知消费者消费 */
             } catch (RejectedExecutionException e) {
                 this.submitConsumeRequestLater(consumeRequest);
             }
@@ -196,7 +196,7 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
                         break;
                     }
                 }
-
+                /* 将消息分批消息，默认每次消费1个 */
                 ConsumeRequest consumeRequest = new ConsumeRequest(msgThis, processQueue, messageQueue);
                 try {
                     this.consumeExecutor.submit(consumeRequest);
@@ -234,7 +234,7 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
                 this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, topic, failed);
                 break;
             case RECONSUME_LATER:
-                ackIndex = -1;
+                ackIndex = -1; /*  RECONSUME_LATER --> ackIndex = -1  --> 转存重试队列 */
                 this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, topic,
                         consumeRequest.getMsgs().size());
                 break;
@@ -243,7 +243,7 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
         }
 
         //ack if consume success
-        for (int i = 0; i <= ackIndex; i++) {
+        for (int i = 0; i <= ackIndex; i++) { /* 消费成功 */
             this.defaultMQPushConsumerImpl.ackAsync(consumeRequest.getMsgs().get(i), consumerGroup);
             consumeRequest.getPopProcessQueue().ack();
         }
@@ -341,13 +341,13 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
             }
         }, 5000, TimeUnit.MILLISECONDS);
     }
-
+    /* 并发异步消费消息任务*/
     class ConsumeRequest implements Runnable {
-        private final List<MessageExt> msgs;
-        private final PopProcessQueue processQueue;
-        private final MessageQueue messageQueue;
-        private long popTime = 0;
-        private long invisibleTime = 0;
+        private final List<MessageExt> msgs;          /* 本次消费消息 - 默认一个 */
+        private final PopProcessQueue processQueue;   /* 本地消息队列 */
+        private final MessageQueue messageQueue;      /* 远程消息队列 */
+        private long popTime = 0;  /* 什么时候被 Pop 出来的 */
+        private long invisibleTime = 0; /* 不可见时间 - 消息锁定时长 */
 
         public ConsumeRequest(List<MessageExt> msgs, PopProcessQueue processQueue, MessageQueue messageQueue) {
             this.msgs = msgs;
@@ -382,7 +382,7 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
         }
 
         @Override
-        public void run() {
+        public void run() {  /* 执行消费消息任务 */
             if (this.processQueue.isDropped()) {
                 log.info("the message queue not be able to consume, because it's dropped(pop). group={} {}", ConsumeMessagePopConcurrentlyService.this.consumerGroup, this.messageQueue);
                 return;
@@ -421,7 +421,7 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
                         MessageAccessor.setConsumeStartTimeStamp(msg, String.valueOf(System.currentTimeMillis()));
                     }
                 }
-                status = listener.consumeMessage(Collections.unmodifiableList(msgs), context);
+                status = listener.consumeMessage(Collections.unmodifiableList(msgs), context);/* ## 回调业务自定义消息监听器 - 业务消费 */
             } catch (Throwable e) {
                 log.warn("consumeMessage exception: {} Group: {} Msgs: {} MQ: {}",
                     UtilAll.exceptionSimpleDesc(e),
@@ -464,7 +464,7 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
             ConsumeMessagePopConcurrentlyService.this.getConsumerStatsManager()
                 .incConsumeRT(ConsumeMessagePopConcurrentlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
 
-            if (!processQueue.isDropped() && !isPopTimeout()) {
+            if (!processQueue.isDropped() && !isPopTimeout()) { /* ## 消息消费成功，更新最小消费偏移offset */
                 ConsumeMessagePopConcurrentlyService.this.processConsumeResult(status, context, this);
             } else {
                 if (msgs != null) {

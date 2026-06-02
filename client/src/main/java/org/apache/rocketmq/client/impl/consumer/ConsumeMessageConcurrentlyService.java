@@ -193,8 +193,8 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         if (msgs.size() <= consumeBatchSize) {
             ConsumeRequest consumeRequest = new ConsumeRequest(msgs, processQueue, messageQueue);
             try {
-                this.consumeExecutor.submit(consumeRequest);
-            } catch (RejectedExecutionException e) { /* 拉取消息成功后，异步通知消费者消费 */
+                this.consumeExecutor.submit(consumeRequest); /* 拉取消息成功后，异步通知消费者消费 */
+            } catch (RejectedExecutionException e) {
                 this.submitConsumeRequestLater(consumeRequest);
             }
         } else {

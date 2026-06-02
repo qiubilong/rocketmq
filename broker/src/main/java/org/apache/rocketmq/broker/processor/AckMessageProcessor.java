@@ -48,14 +48,14 @@ import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.pop.AckMsg;
 import org.apache.rocketmq.store.pop.BatchAckMsg;
 
-public class AckMessageProcessor implements NettyRequestProcessor {
+public class AckMessageProcessor implements NettyRequestProcessor { /* pop 消费 ack 处理器 */
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
     private final BrokerController brokerController;
-    private final String reviveTopic;
+    private final String reviveTopic; /* ack 队列 */
     private final PopReviveService[] popReviveServices;
 
     public AckMessageProcessor(final BrokerController brokerController) {
-        this.brokerController = brokerController;
+        this.brokerController = brokerController;    /*  %RETRY%REVIVE_LOG_{clusterName}。 */
         this.reviveTopic = PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
         this.popReviveServices = new PopReviveService[this.brokerController.getBrokerConfig().getReviveQueueNum()];
         for (int i = 0; i < this.brokerController.getBrokerConfig().getReviveQueueNum(); i++) {
@@ -108,7 +108,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
     }
 
     private RemotingCommand processRequest(final Channel channel, RemotingCommand request,
-                                           boolean brokerAllowSuspend) throws RemotingCommandException {
+                                           boolean brokerAllowSuspend) throws RemotingCommandException { /* pop消费 ack */
         AckMessageRequestHeader requestHeader;
         BatchAckMessageRequestBody reqBody = null;
         final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.SUCCESS, null);
@@ -144,7 +144,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
                 return response;
             }
 
-            appendAck(requestHeader, null, response, channel, null);
+            appendAck(requestHeader, null, response, channel, null); /* pop消费 ack */
         } else if (request.getCode() == RequestCode.BATCH_ACK_MESSAGE) {
             if (request.getBody() != null) {
                 reqBody = BatchAckMessageRequestBody.decode(request.getBody(), BatchAckMessageRequestBody.class);
@@ -245,8 +245,8 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         ackMsg.setAckOffset(ackOffset);
         ackMsg.setPopTime(popTime);
         ackMsg.setBrokerName(brokerName);
-
-        if (this.brokerController.getPopMessageProcessor().getPopBufferMergeService().addAk(rqId, ackMsg)) {
+        //内存缓冲写入成功? ──→ 结束（高性能路径）
+        if (this.brokerController.getPopMessageProcessor().getPopBufferMergeService().addAk(rqId, ackMsg)) { /* 消费 ack */
             brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(topic, consumeGroup, popTime, qId, ackCount);
             return;
         }

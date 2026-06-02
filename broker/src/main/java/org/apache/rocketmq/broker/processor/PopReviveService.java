@@ -60,7 +60,7 @@ import org.apache.rocketmq.store.pop.PopCheckPoint;
 import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_CONSUMER_GROUP;
 import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_IS_SYSTEM;
 import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_TOPIC;
-
+/* Pop 消费模式的**"兜底恢复服务"**——定时消费 Revive Topic 中的 CK 和 ACK，匹配后对未确认的消息执行重投，确保消息不丢失 */
 public class PopReviveService extends ServiceThread {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
 
@@ -100,10 +100,10 @@ public class PopReviveService extends ServiceThread {
         return shouldRunPopRevive;
     }
 
-    private boolean reviveRetry(PopCheckPoint popCheckPoint, MessageExt messageExt) {
+    private boolean reviveRetry(PopCheckPoint popCheckPoint, MessageExt messageExt) { /* ack 超时 重新投递 */
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
         if (!popCheckPoint.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-            msgInner.setTopic(KeyBuilder.buildPopRetryTopic(popCheckPoint.getTopic(), popCheckPoint.getCId()));
+            msgInner.setTopic(KeyBuilder.buildPopRetryTopic(popCheckPoint.getTopic(), popCheckPoint.getCId())); /* 消费者重试队列 【 %RETRY%{consumerGroup}_{originalTopic} 】*/
         } else {
             msgInner.setTopic(popCheckPoint.getTopic());
         }
@@ -119,7 +119,7 @@ public class PopReviveService extends ServiceThread {
         msgInner.setSysFlag(messageExt.getSysFlag());
         msgInner.setBornHost(brokerController.getStoreHost());
         msgInner.setStoreHost(brokerController.getStoreHost());
-        msgInner.setReconsumeTimes(messageExt.getReconsumeTimes() + 1);
+        msgInner.setReconsumeTimes(messageExt.getReconsumeTimes() + 1); /* 重试次数 +1 */
         msgInner.getProperties().putAll(messageExt.getProperties());
         if (messageExt.getReconsumeTimes() == 0 || msgInner.getProperties().get(MessageConst.PROPERTY_FIRST_POP_TIME) == null) {
             msgInner.getProperties().put(MessageConst.PROPERTY_FIRST_POP_TIME, String.valueOf(popCheckPoint.getPopTime()));
@@ -322,7 +322,7 @@ public class PopReviveService extends ServiceThread {
                 POP_LOGGER.info("slave skip scan , revive topic={}, reviveQueueId={}", reviveTopic, queueId);
                 break;
             }
-            List<MessageExt> messageExts = getReviveMessage(offset, queueId);
+            List<MessageExt> messageExts = getReviveMessage(offset, queueId); /* 扫描 Revive Topic，CK+ACK 内存匹配 */
             if (messageExts == null || messageExts.isEmpty()) {
                 long old = endTime;
                 long timerDelay = brokerController.getMessageStore().getTimerMessageStore().getDequeueBehind();
@@ -355,7 +355,7 @@ public class PopReviveService extends ServiceThread {
                 break;
             }
             for (MessageExt messageExt : messageExts) {
-                if (PopAckConstants.CK_TAG.equals(messageExt.getTags())) {
+                if (PopAckConstants.CK_TAG.equals(messageExt.getTags())) { /* pop记录 */
                     String raw = new String(messageExt.getBody(), DataConverter.charset);
                     if (brokerController.getBrokerConfig().isEnablePopLog()) {
                         POP_LOGGER.info("reviveQueueId={},find ck, offset:{}, raw : {}", messageExt.getQueueId(), messageExt.getQueueOffset(), raw);
@@ -370,7 +370,7 @@ public class PopReviveService extends ServiceThread {
                     if (firstRt == 0) {
                         firstRt = point.getReviveTime();
                     }
-                } else if (PopAckConstants.ACK_TAG.equals(messageExt.getTags())) {
+                } else if (PopAckConstants.ACK_TAG.equals(messageExt.getTags())) { /* ack记录 */
                     String raw = new String(messageExt.getBody(), DataConverter.charset);
                     if (brokerController.getBrokerConfig().isEnablePopLog()) {
                         POP_LOGGER.info("reviveQueueId={},find ack, offset:{}, raw : {}", messageExt.getQueueId(), messageExt.getQueueOffset(), raw);
@@ -378,7 +378,7 @@ public class PopReviveService extends ServiceThread {
                     AckMsg ackMsg = JSON.parseObject(raw, AckMsg.class);
                     PopMetricsManager.incPopReviveAckGetCount(ackMsg, queueId);
                     String mergeKey = ackMsg.getTopic() + ackMsg.getConsumerGroup() + ackMsg.getQueueId() + ackMsg.getStartOffset() + ackMsg.getPopTime();
-                    PopCheckPoint point = map.get(mergeKey);
+                    PopCheckPoint point = map.get(mergeKey); /* 关联 【pop记录】  */
                     if (point == null) {
                         if (!brokerController.getBrokerConfig().isEnableSkipLongAwaitingAck()) {
                             continue;
@@ -389,7 +389,7 @@ public class PopReviveService extends ServiceThread {
                     } else {
                         int indexOfAck = point.indexOfAck(ackMsg.getAckOffset());
                         if (indexOfAck > -1) {
-                            point.setBitMap(DataConverter.setBit(point.getBitMap(), indexOfAck, true));
+                            point.setBitMap(DataConverter.setBit(point.getBitMap(), indexOfAck, true)); /* 设置 ack 位图 */
                         } else {
                             POP_LOGGER.error("invalid ack index, {}, {}", ackMsg, point);
                         }
@@ -464,7 +464,7 @@ public class PopReviveService extends ServiceThread {
     }
 
     protected void mergeAndRevive(ConsumeReviveObj consumeReviveObj) throws Throwable {
-        ArrayList<PopCheckPoint> sortList = consumeReviveObj.genSortList();
+        ArrayList<PopCheckPoint> sortList = consumeReviveObj.genSortList();/* 排序 */
         //POP_LOGGER.info("reviveQueueId={},ck listSize={}", queueId, sortList.size());
         if (sortList.size() != 0) {
             POP_LOGGER.info("reviveQueueId={}, 1st ck, startOffset={}, reviveOffset={} ; last ck, startOffset={}, reviveOffset={}", queueId, sortList.get(0).getStartOffset(),
@@ -503,7 +503,7 @@ public class PopReviveService extends ServiceThread {
                 }
             }
 
-            reviveMsgFromCk(popCheckPoint);
+            reviveMsgFromCk(popCheckPoint); /* 核心重投逻辑 */
 
             newOffset = popCheckPoint.getReviveOffset();
         }
@@ -525,11 +525,11 @@ public class PopReviveService extends ServiceThread {
         }
         inflightReviveRequestMap.put(popCheckPoint, new Pair<>(System.currentTimeMillis(), false));
         List<CompletableFuture<Pair<Long, Boolean>>> futureList = new ArrayList<>(popCheckPoint.getNum());
-        for (int j = 0; j < popCheckPoint.getNum(); j++) {
-            if (DataConverter.getBit(popCheckPoint.getBitMap(), j)) {
+        for (int j = 0; j < popCheckPoint.getNum(); j++) {            /* 遍历 CK 的每条消息 */
+            if (DataConverter.getBit(popCheckPoint.getBitMap(), j)) { /* 已经ack ，跳过处理 */
                 continue;
             }
-
+            /* 未ACK , 重新投递 */
             // retry msg
             long msgOffset = popCheckPoint.ackOffsetByIndex((byte) j);
             CompletableFuture<Pair<Long, Boolean>> future = getBizMessage(popCheckPoint.getTopic(), msgOffset, popCheckPoint.getQueueId(), popCheckPoint.getBrokerName())
@@ -642,7 +642,7 @@ public class PopReviveService extends ServiceThread {
 
                 //POP_LOGGER.info("start revive topic={}, reviveQueueId={}", reviveTopic, queueId);
                 ConsumeReviveObj consumeReviveObj = new ConsumeReviveObj();
-                consumeReviveMessage(consumeReviveObj);
+                consumeReviveMessage(consumeReviveObj); /* 扫描 Revive Topic，CK+ACK 内存匹配 */
 
                 if (!shouldRunPopRevive) {
                     POP_LOGGER.info("slave skip scan , revive topic={}, reviveQueueId={}", reviveTopic, queueId);

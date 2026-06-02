@@ -22,7 +22,7 @@ import org.apache.rocketmq.remoting.protocol.body.PopProcessQueueInfo;
 /**
  * Queue consumption snapshot
  */
-public class PopProcessQueue {
+public class PopProcessQueue { /* 消费者 - MessageQueue对应的 -  本地缓存【消息分区队列】 */
 
     private final static long PULL_MAX_IDLE_TIME = Long.parseLong(System.getProperty("rocketmq.client.pull.pullMaxIdleTime", "120000"));
 
@@ -38,7 +38,7 @@ public class PopProcessQueue {
         this.lastPopTimestamp = lastPopTimestamp;
     }
 
-    public void incFoundMsg(int count) {
+    public void incFoundMsg(int count) {   /* 拉取到的消息条数 */
         this.waitAckCounter.getAndAdd(count);
     }
 
@@ -46,7 +46,7 @@ public class PopProcessQueue {
      * @return the value before decrement.
      */
     public int ack() {
-        return this.waitAckCounter.getAndDecrement();
+        return this.waitAckCounter.getAndDecrement(); /* 消费成功 */
     }
 
     public void decFoundMsg(int count) {

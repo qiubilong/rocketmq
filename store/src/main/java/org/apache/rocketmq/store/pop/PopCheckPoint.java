@@ -20,17 +20,17 @@ import com.alibaba.fastjson.annotation.JSONField;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PopCheckPoint implements Comparable<PopCheckPoint> {
+public class PopCheckPoint implements Comparable<PopCheckPoint> { /* 记录"哪些消息被 Pop 出去了 【一次 Pop 请求可以拉取多条消息】 */
     @JSONField(name = "so")
-    private long startOffset;
+    private long startOffset; /* 开始偏移 */
     @JSONField(name = "pt")
-    private long popTime;
+    private long popTime;    /* 拉取消息时间 */
     @JSONField(name = "it")
     private long invisibleTime;
     @JSONField(name = "bm")
     private int bitMap;
     @JSONField(name = "n")
-    private byte num;
+    private byte num;          /* 消息数 */
     @JSONField(name = "q")
     private int queueId;
     @JSONField(name = "t")
