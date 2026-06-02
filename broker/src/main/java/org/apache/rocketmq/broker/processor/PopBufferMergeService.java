@@ -438,7 +438,7 @@ public class PopBufferMergeService extends ServiceThread {
             POP_LOGGER.warn("[PopBuffer]mergeKey conflict when add ckJustOffset. ck:{}, mergeKey:{}", pointWrapper, pointWrapper.getMergeKey());
             return false;
         }
-
+        /* 立即将 CK 写入 Revive Topic */
         this.putCkToStore(pointWrapper, !checkQueueOk(pointWrapper));
 
         putOffsetQueue(pointWrapper);
@@ -474,7 +474,7 @@ public class PopBufferMergeService extends ServiceThread {
 
     public boolean addCk(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
         // key: point.getT() + point.getC() + point.getQ() + point.getSo() + point.getPt()
-        if (!brokerController.getBrokerConfig().isEnablePopBufferMerge()) {
+        if (!brokerController.getBrokerConfig().isEnablePopBufferMerge()) { /* 默认关闭 */
             return false;
         }
         if (!serving) {
@@ -517,7 +517,7 @@ public class PopBufferMergeService extends ServiceThread {
     }
 
     public boolean addAk(int reviveQid, AckMsg ackMsg) {
-        if (!brokerController.getBrokerConfig().isEnablePopBufferMerge()) {
+        if (!brokerController.getBrokerConfig().isEnablePopBufferMerge()) { /* 默认关闭 */
             return false;
         }
         if (!serving) {

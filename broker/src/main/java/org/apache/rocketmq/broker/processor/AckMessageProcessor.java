@@ -245,14 +245,14 @@ public class AckMessageProcessor implements NettyRequestProcessor { /* pop 消�
         ackMsg.setAckOffset(ackOffset);
         ackMsg.setPopTime(popTime);
         ackMsg.setBrokerName(brokerName);
-        //内存缓冲写入成功? ──→ 结束（高性能路径）
-        if (this.brokerController.getPopMessageProcessor().getPopBufferMergeService().addAk(rqId, ackMsg)) { /* 消费 ack */
+        //内存缓冲写入成功? ──→ 结束（高性能路径） -- 默认关闭
+        if (this.brokerController.getPopMessageProcessor().getPopBufferMergeService().addAk(rqId, ackMsg)) { // 内存 ack
             brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(topic, consumeGroup, popTime, qId, ackCount);
             return;
         }
-
+        /* ack持久化 -- > PopReviveService 检查投递 */
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
-        msgInner.setTopic(reviveTopic);
+        msgInner.setTopic(reviveTopic);/* ack队列 */
         msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.charset));
         msgInner.setQueueId(rqId);
         if (ackMsg instanceof BatchAckMsg) {
@@ -265,7 +265,7 @@ public class AckMessageProcessor implements NettyRequestProcessor { /* pop 消�
         msgInner.setBornTimestamp(System.currentTimeMillis());
         msgInner.setBornHost(this.brokerController.getStoreHost());
         msgInner.setStoreHost(this.brokerController.getStoreHost());
-        msgInner.setDeliverTimeMs(popTime + invisibleTime);
+        msgInner.setDeliverTimeMs(popTime + invisibleTime); /* 消息投递时间 */
         msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopMessageProcessor.genAckUniqueId(ackMsg));
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
         PutMessageResult putMessageResult = this.brokerController.getEscapeBridge().putMessageToSpecificQueue(msgInner);

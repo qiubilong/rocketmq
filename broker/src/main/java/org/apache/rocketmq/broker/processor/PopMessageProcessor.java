@@ -98,7 +98,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
     private final BrokerController brokerController;
     private final Random random = new Random(System.currentTimeMillis());
-    String reviveTopic;
+    String reviveTopic; /* 等待 ack队列 */
     private static final String BORN_TIME = "bornTime";
 
     private final PopLongPollingService popLongPollingService;
@@ -685,8 +685,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     public final MessageExtBrokerInner buildCkMsg(final PopCheckPoint ck, final int reviveQid) {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
 
-        msgInner.setTopic(reviveTopic);
-        msgInner.setBody(JSON.toJSONString(ck).getBytes(DataConverter.charset));
+        msgInner.setTopic(reviveTopic);/* 等待 ack队列 */
+        msgInner.setBody(JSON.toJSONString(ck).getBytes(DataConverter.charset)); /* json数据 */
         msgInner.setQueueId(reviveQid);
         msgInner.setTags(PopAckConstants.CK_TAG);
         msgInner.setBornTimestamp(System.currentTimeMillis());
@@ -698,15 +698,15 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         return msgInner;
     }
-
+    /* 记录"这批消息被 Pop 出去了" */
     private boolean appendCheckPoint(final PopMessageRequestHeader requestHeader,
         final String topic, final int reviveQid, final int queueId, final long offset,
         final GetMessageResult getMessageTmpResult, final long popTime, final String brokerName) {
         // add check point msg to revive log
         final PopCheckPoint ck = new PopCheckPoint();
-        ck.setBitMap(0);
-        ck.setNum((byte) getMessageTmpResult.getMessageMapedList().size());
-        ck.setPopTime(popTime);
+        ck.setBitMap(0); /* 初始化 bitMap=000  */
+        ck.setNum((byte) getMessageTmpResult.getMessageMapedList().size()); /* 本批消息条数 */
+        ck.setPopTime(popTime); /* 本次 Pop 的时间戳 */
         ck.setInvisibleTime(requestHeader.getInvisibleTime());
         ck.setStartOffset(offset);
         ck.setCId(requestHeader.getConsumerGroup());
@@ -716,7 +716,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         for (Long msgQueueOffset : getMessageTmpResult.getMessageQueueOffset()) {
             ck.addDiff((int) (msgQueueOffset - offset));
         }
-        /*  将 CK 加入内存 buffer */
+        /*  将 CK 加入内存 buffer 【buffer默认关闭】 */
         final boolean addBufferSuc = this.popBufferMergeService.addCk(
             ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset()
         );
@@ -724,7 +724,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         if (addBufferSuc) {
             return true;
         }
-        return this.popBufferMergeService.addCkJustOffset(
+        return this.popBufferMergeService.addCkJustOffset(  /* 立即将 CK 写入 Revive Topic */
             ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset()
         );
     }
